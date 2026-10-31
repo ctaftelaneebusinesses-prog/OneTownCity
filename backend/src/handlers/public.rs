@@ -229,6 +229,7 @@ pub async fn list_opportunities(
             title, slug, provider_name, description, eligibility, deadline,
             apply_url, contact_phone, discount_percent, stipend_amount,
             moderation_status as "moderation_status: _",
+            anti_scam_acknowledged,
             created_at, updated_at
         FROM student_opportunities
         WHERE moderation_status = 'approved'

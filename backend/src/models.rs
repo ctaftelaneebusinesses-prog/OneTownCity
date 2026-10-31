@@ -258,6 +258,7 @@ pub struct StudentOpportunity {
     pub discount_percent: Option<i32>,
     pub stipend_amount: Option<String>,
     pub moderation_status: ModerationStatus,
+    pub anti_scam_acknowledged: bool,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
