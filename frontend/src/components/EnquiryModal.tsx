@@ -71,45 +71,45 @@ export function EnquiryModal({ isOpen, onClose, listing, apiUrl }: EnquiryModalP
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-      <div className="w-full max-w-lg rounded border border-neutral-800 bg-neutral-950 p-6 shadow-2xl">
-        <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+      <div className="w-full max-w-lg rounded-lg border border-[#C3CDD6] bg-[#F8FAFC] p-6 shadow-2xl">
+        <div className="flex items-center justify-between border-b border-[#C3CDD6] pb-3">
           <div>
-            <div className="font-mono text-[10px] text-neutral-400 uppercase tracking-widest">
+            <div className="font-mono text-[10px] text-[#EAAA00] uppercase tracking-widest font-bold">
               Direct Lead Capture
             </div>
-            <h3 className="font-mono text-base font-bold text-neutral-100">
+            <h3 className="font-mono text-base font-bold text-[#3A0F34]">
               {listing.vertical === "education" ? "Course & Admission Request" : "Customer Enquiry"}
             </h3>
           </div>
           <button
             onClick={onClose}
-            className="rounded p-1 text-neutral-400 hover:bg-neutral-900 hover:text-white"
+            className="rounded p-1 text-[#5E4B5B] hover:bg-[#DDE3E8] hover:text-[#1E081B] transition-colors"
           >
-            <X className="h-5 w-5" />
+            <X className="h-5 w-5" strokeWidth={1.75} />
           </button>
         </div>
 
-        <div className="my-3 font-mono text-xs text-neutral-300">
-          Target: <span className="font-semibold text-white">{listing.name}</span>
+        <div className="my-3 font-mono text-xs text-[#5E4B5B]">
+          Target: <span className="font-bold text-[#1E081B]">{listing.name}</span>
         </div>
 
         {successMsg ? (
-          <div className="my-6 flex items-center gap-2 rounded border border-neutral-700 bg-neutral-900 p-4 font-mono text-xs text-neutral-200">
-            <CheckCircle className="h-4 w-4 text-white" />
+          <div className="my-6 flex items-center gap-2 rounded-lg border border-[#0D6E52] bg-[#0D6E52]/10 p-4 font-mono text-xs text-[#0D6E52] font-semibold">
+            <CheckCircle className="h-4 w-4 text-[#0D6E52]" strokeWidth={2} />
             <span>{successMsg}</span>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
             {errorMsg && (
-              <div className="flex items-center gap-2 rounded border border-red-900/60 bg-red-950/40 p-2 font-mono text-xs text-red-300">
-                <AlertCircle className="h-4 w-4 text-red-400" />
+              <div className="flex items-center gap-2 rounded-lg border border-[#B93829] bg-[#B93829]/10 p-2.5 font-mono text-xs text-[#B93829]">
+                <AlertCircle className="h-4 w-4 text-[#B93829]" strokeWidth={2} />
                 <span>{errorMsg}</span>
               </div>
             )}
 
             <div>
-              <label className="block font-mono text-xs text-neutral-400 uppercase mb-1">
+              <label className="block font-mono text-xs text-[#5E4B5B] uppercase font-bold mb-1">
                 Your Full Name *
               </label>
               <input
@@ -117,14 +117,14 @@ export function EnquiryModal({ isOpen, onClose, listing, apiUrl }: EnquiryModalP
                 value={inquirerName}
                 onChange={(e) => setInquirerName(e.target.value)}
                 placeholder="e.g. Ramesh Varma"
-                className="w-full rounded border border-neutral-800 bg-neutral-900 px-3 py-2 font-mono text-xs text-neutral-100 placeholder-neutral-600 outline-none focus:border-neutral-500"
+                className="w-full rounded border border-[#C3CDD6] bg-[#DDE3E8]/30 px-3 py-2 font-mono text-xs text-[#1E081B] placeholder-[#5E4B5B] outline-none focus:border-[#3A0F34]"
                 required
               />
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block font-mono text-xs text-neutral-400 uppercase mb-1">
+                <label className="block font-mono text-xs text-[#5E4B5B] uppercase font-bold mb-1">
                   Phone Number *
                 </label>
                 <input
@@ -132,13 +132,13 @@ export function EnquiryModal({ isOpen, onClose, listing, apiUrl }: EnquiryModalP
                   value={inquirerPhone}
                   onChange={(e) => setInquirerPhone(e.target.value)}
                   placeholder="+91-9876543210"
-                  className="w-full rounded border border-neutral-800 bg-neutral-900 px-3 py-2 font-mono text-xs text-neutral-100 placeholder-neutral-600 outline-none focus:border-neutral-500"
+                  className="w-full rounded border border-[#C3CDD6] bg-[#DDE3E8]/30 px-3 py-2 font-mono text-xs text-[#1E081B] placeholder-[#5E4B5B] outline-none focus:border-[#3A0F34]"
                   required
                 />
               </div>
 
               <div>
-                <label className="block font-mono text-xs text-neutral-400 uppercase mb-1">
+                <label className="block font-mono text-xs text-[#5E4B5B] uppercase font-bold mb-1">
                   Email (Optional)
                 </label>
                 <input
@@ -146,13 +146,13 @@ export function EnquiryModal({ isOpen, onClose, listing, apiUrl }: EnquiryModalP
                   value={inquirerEmail}
                   onChange={(e) => setInquirerEmail(e.target.value)}
                   placeholder="ramesh@gmail.com"
-                  className="w-full rounded border border-neutral-800 bg-neutral-900 px-3 py-2 font-mono text-xs text-neutral-100 placeholder-neutral-600 outline-none focus:border-neutral-500"
+                  className="w-full rounded border border-[#C3CDD6] bg-[#DDE3E8]/30 px-3 py-2 font-mono text-xs text-[#1E081B] placeholder-[#5E4B5B] outline-none focus:border-[#3A0F34]"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block font-mono text-xs text-neutral-400 uppercase mb-1">
+              <label className="block font-mono text-xs text-[#5E4B5B] uppercase font-bold mb-1">
                 Enquiry Category
               </label>
               <select
@@ -160,7 +160,7 @@ export function EnquiryModal({ isOpen, onClose, listing, apiUrl }: EnquiryModalP
                 onChange={(e) =>
                   setEnquiryType(e.target.value as "admission" | "course_fee" | "general_availability")
                 }
-                className="w-full rounded border border-neutral-800 bg-neutral-900 px-3 py-2 font-mono text-xs text-neutral-100 outline-none focus:border-neutral-500"
+                className="w-full rounded border border-[#C3CDD6] bg-[#DDE3E8]/30 px-3 py-2 font-mono text-xs text-[#1E081B] outline-none focus:border-[#3A0F34]"
               >
                 {listing.vertical === "education" ? (
                   <>
@@ -178,7 +178,7 @@ export function EnquiryModal({ isOpen, onClose, listing, apiUrl }: EnquiryModalP
             </div>
 
             <div>
-              <label className="block font-mono text-xs text-neutral-400 uppercase mb-1">
+              <label className="block font-mono text-xs text-[#5E4B5B] uppercase font-bold mb-1">
                 Message & Specific Requirements *
               </label>
               <textarea
@@ -186,25 +186,25 @@ export function EnquiryModal({ isOpen, onClose, listing, apiUrl }: EnquiryModalP
                 onChange={(e) => setMessage(e.target.value)}
                 rows={3}
                 placeholder="Mention specific course, seats, requirements, or timing..."
-                className="w-full rounded border border-neutral-800 bg-neutral-900 px-3 py-2 font-mono text-xs text-neutral-100 placeholder-neutral-600 outline-none focus:border-neutral-500"
+                className="w-full rounded border border-[#C3CDD6] bg-[#DDE3E8]/30 px-3 py-2 font-mono text-xs text-[#1E081B] placeholder-[#5E4B5B] outline-none focus:border-[#3A0F34]"
                 required
               />
             </div>
 
-            <div className="flex justify-end gap-2 pt-2">
+            <div className="flex justify-end gap-2 pt-2 border-t border-[#C3CDD6]">
               <button
                 type="button"
                 onClick={onClose}
-                className="rounded border border-neutral-800 px-4 py-2 font-mono text-xs uppercase text-neutral-400 hover:bg-neutral-900"
+                className="rounded border border-[#C3CDD6] px-4 py-2 font-mono text-xs uppercase font-semibold text-[#5E4B5B] hover:bg-[#DDE3E8] hover:text-[#1E081B] transition-colors"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="flex items-center gap-1.5 rounded bg-neutral-100 px-4 py-2 font-mono text-xs font-bold uppercase text-neutral-950 hover:bg-white disabled:opacity-50"
+                className="flex items-center gap-1.5 rounded bg-[#3A0F34] px-4 py-2 font-mono text-xs font-bold uppercase text-[#F8FAFC] hover:bg-[#240820] shadow-xs disabled:opacity-50 transition-colors"
               >
-                <Send className="h-3.5 w-3.5" />
+                <Send className="h-3.5 w-3.5" strokeWidth={1.75} />
                 <span>{isSubmitting ? "Sending..." : "Submit Lead"}</span>
               </button>
             </div>
