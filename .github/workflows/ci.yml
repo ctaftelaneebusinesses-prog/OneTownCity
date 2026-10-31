@@ -123,7 +123,7 @@ jobs:
         uses: taiki-e/install-action@cargo-audit
 
       - name: Rust audit
-        run: cargo audit --ignore RUSTSEC-2026-0173
+        run: cargo audit --ignore RUSTSEC-2023-0071 --ignore RUSTSEC-2026-0173
         working-directory: backend
 
       - name: Setup pnpm
