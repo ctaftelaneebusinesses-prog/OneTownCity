@@ -1,0 +1,36 @@
+# Root gitignore for OneTownCity monorepo
+
+# ── Environment / Secrets ───────────────────────────────────────────────────
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# ── TLS certificates ────────────────────────────────────────────────────────
+certs/*.pem
+certs/*.key
+
+# ── Node / pnpm ─────────────────────────────────────────────────────────────
+node_modules/
+.pnpm-store/
+.next/
+out/
+dist/
+*.tsbuildinfo
+
+# ── Rust ────────────────────────────────────────────────────────────────────
+target/
+Cargo.lock         # Keep for binaries; comment out for libraries
+
+# ── OS ──────────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# ── IDE ─────────────────────────────────────────────────────────────────────
+.vscode/settings.json
+.idea/
+
+# ── Docker ──────────────────────────────────────────────────────────────────
+docker-compose.override.yml
