@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import { CheckCircle2, XCircle, AlertTriangle, ShieldCheck, RefreshCw, FileText } from "lucide-react";
+import { CheckCircle2, XCircle, AlertTriangle, ShieldCheck, RefreshCw } from "lucide-react";
 import { useTown } from "@/components/TownContext";
 
 interface AdminListing {

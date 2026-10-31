@@ -9,10 +9,7 @@ use sqlx::PgPool;
 use std::sync::Arc;
 use std::time::Duration;
 use tower_http::{
-    compression::CompressionLayer,
-    cors::CorsLayer,
-    timeout::TimeoutLayer,
-    trace::TraceLayer,
+    compression::CompressionLayer, cors::CorsLayer, timeout::TimeoutLayer, trace::TraceLayer,
 };
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
@@ -35,8 +32,9 @@ async fn main() -> anyhow::Result<()> {
     init_tracing();
 
     // Database connection pool (max 15 connections for local 2GB footprint)
-    let database_url = std::env::var("DATABASE_URL")
-        .unwrap_or_else(|_| "postgresql://otc_admin:otc_local_password@127.0.0.1:5432/onetowncity_saas".into());
+    let database_url = std::env::var("DATABASE_URL").unwrap_or_else(|_| {
+        "postgresql://otc_admin:otc_local_password@127.0.0.1:5432/onetowncity_saas".into()
+    });
 
     let pool = sqlx::postgres::PgPoolOptions::new()
         .max_connections(15)

@@ -11,8 +11,8 @@ use uuid::Uuid;
 
 use crate::AppState;
 use crate::models::{
-    EnquiryCreateDto, Listing, ListingSummary, NewsItemType, OpportunityType,
-    ReportCreateDto, StudentOpportunity, TelemetryClickDto, TownNews, VerticalType,
+    EnquiryCreateDto, Listing, ListingSummary, NewsItemType, OpportunityType, ReportCreateDto,
+    StudentOpportunity, TelemetryClickDto, TownNews, VerticalType,
 };
 
 #[derive(Debug, Deserialize)]

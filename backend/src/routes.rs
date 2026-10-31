@@ -26,7 +26,10 @@ pub fn api_router() -> Router<Arc<AppState>> {
         .route("/saas/plan", patch(saas::simulate_plan_upgrade))
         // City Admin Governance
         .route("/admin/moderation", get(admin::list_moderation_queue))
-        .route("/admin/moderation/{id}", patch(admin::action_moderation_item))
+        .route(
+            "/admin/moderation/{id}",
+            patch(admin::action_moderation_item),
+        )
         .route("/admin/reports", get(admin::list_reports))
         .route("/admin/reports/{id}", patch(admin::action_report))
 }

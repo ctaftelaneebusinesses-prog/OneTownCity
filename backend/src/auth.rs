@@ -45,7 +45,10 @@ where
 
         // Extract user id from header "x-user-id" or "x-tenant-persona" (education | business)
         let user_id_header = parts.headers.get("x-user-id").and_then(|h| h.to_str().ok());
-        let persona_header = parts.headers.get("x-tenant-persona").and_then(|h| h.to_str().ok());
+        let persona_header = parts
+            .headers
+            .get("x-tenant-persona")
+            .and_then(|h| h.to_str().ok());
 
         let user_id = if let Some(uid_str) = user_id_header {
             Uuid::parse_str(uid_str).map_err(|_| {
