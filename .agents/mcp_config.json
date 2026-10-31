@@ -1,0 +1,42 @@
+{
+  "mcpServers": {
+    "postgres": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-postgres",
+        "postgresql://otc_admin:otc_local_password@127.0.0.1:5432/onetowncity_saas"
+      ],
+      "timeoutSeconds": 120
+    },
+    "context7": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@upstash/context7-mcp@latest"
+      ],
+      "timeoutSeconds": 60
+    },
+    "playwright": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@playwright/mcp@latest",
+        "--headless",
+        "--executable-path",
+        "/home/prajith/.cache/ms-playwright/chromium-1248/chrome-linux64/chrome",
+        "--no-sandbox"
+      ],
+      "timeoutSeconds": 180
+    },
+    "git": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-git",
+        "--repository",
+        "."
+      ]
+    }
+  }
+}

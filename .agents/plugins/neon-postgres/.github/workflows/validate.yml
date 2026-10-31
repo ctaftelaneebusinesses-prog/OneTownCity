@@ -1,0 +1,93 @@
+name: Validate
+
+# Skill and plugin validation, covering the root Agent Plugins v1 package and
+# the Antigravity, Claude, and Cursor packaging. Supply-chain hardened: SHA-pinned
+# actions, npm ci --ignore-scripts from package-lock.json, harden-runner egress
+# audit. Keep aligned with neondatabase/neon-for-agent-platforms — see AGENTS.md.
+
+on:
+  pull_request:
+    paths:
+      - 'skills/**'
+      - 'plugins/**'
+      - 'assets/**'
+      - 'scripts/**'
+      - 'plugin.json'
+      - 'mcp.json'
+      - 'mcp_config.json'
+      - 'kimi.plugin.json'
+      - '.antigravity-plugin/**'
+      - '.claude-plugin/**'
+      - '.cursor-plugin/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/validate.yml'
+      - '.github/dependabot.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'skills/**'
+      - 'plugins/**'
+      - 'assets/**'
+      - 'scripts/**'
+      - 'plugin.json'
+      - 'mcp.json'
+      - 'mcp_config.json'
+      - 'kimi.plugin.json'
+      - '.antigravity-plugin/**'
+      - '.claude-plugin/**'
+      - '.cursor-plugin/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/validate.yml'
+      - '.github/dependabot.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  validate:
+    name: Validate
+    # Fork PRs cannot mint OIDC tokens, and the protected group cannot reach npmjs.
+    runs-on: ${{ github.event.pull_request.head.repo.fork && 'ubuntu-latest' || fromJSON('{"group":"neondatabase-protected-runner-group","labels":"linux-ubuntu-latest"}') }}
+    steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@05e31511f85b41b11d1cf0ef85d0992719546e2c # v2.21.0
+        with:
+          egress-policy: audit
+
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup JFrog CLI with OIDC
+        if: ${{ !github.event.pull_request.head.repo.fork }}
+        id: setup-jfrog
+        uses: jfrog/setup-jfrog-cli@deda456d982fc5e9a7a020b63eb0d2968aedd33e # v5.1.0
+        env:
+          JF_URL: https://databricks.jfrog.io
+        with:
+          oidc-provider-name: github-actions
+
+      - name: Configure npm registry (Databricks JFrog mirror)
+        if: ${{ !github.event.pull_request.head.repo.fork }}
+        run: |
+          cat > ~/.npmrc <<EOF
+          registry=https://databricks.jfrog.io/artifactory/api/npm/db-npm/
+          //databricks.jfrog.io/artifactory/api/npm/db-npm/:_authToken=${{ steps.setup-jfrog.outputs.oidc-token }}
+          always-auth=true
+          EOF
+
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Run validation
+        run: npm run validate:ci

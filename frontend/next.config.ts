@@ -33,7 +33,7 @@ const nextConfig: NextConfig = {
               "img-src 'self' blob: data: https:",
               "font-src 'self'",
               "object-src 'none'",
-              "connect-src 'self' http://localhost:8080 https://sentry.io wss://localhost:3000",
+              "connect-src 'self' http://localhost:8080 http://127.0.0.1:8080 https://sentry.io wss://localhost:3000",
             ].join("; "),
           },
         ],

@@ -1,0 +1,21 @@
+{
+  "name": "neon",
+  "owner": {
+    "name": "Andre Landgraf",
+    "email": "andre@neon.tech"
+  },
+  "metadata": {
+    "description": "Official Neon plugins for Claude Code",
+    "version": "2.3.0"
+  },
+  "plugins": [
+    {
+      "name": "neon-postgres",
+      "source": "./plugins/neon-postgres",
+      "description": "Manage your Neon backend with the Neon agent skills and the Neon MCP Server: Lakebase Postgres, Managed Better Auth, Realtime, Object Storage, Functions, the Data API, and AI Gateway",
+      "version": "2.3.0",
+      "category": "database",
+      "tags": ["neon", "lakebase", "postgres", "serverless", "database", "mcp"]
+    }
+  ]
+}

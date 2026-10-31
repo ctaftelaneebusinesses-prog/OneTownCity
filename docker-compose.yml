@@ -1,41 +1,26 @@
-
 services:
-  # ── PostgreSQL ─────────────────────────────────────────────────────────────
+  # ── PostgreSQL 16 Local ──────────────────────────────────────────────────
   postgres:
     image: postgres:16-alpine
-    container_name: otc_postgres
+    container_name: otc_postgres_local
     restart: unless-stopped
     environment:
-      POSTGRES_USER: prajith
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-devpassword}
-      POSTGRES_DB: onetowncity
+      POSTGRES_USER: otc_admin
+      POSTGRES_PASSWORD: otc_local_password
+      POSTGRES_DB: onetowncity_saas
     ports:
-      - "5433:5432"   # expose on 5433 to avoid conflict with local Postgres
+      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U prajith -d onetowncity"]
-      interval: 10s
+      test: ["CMD-SHELL", "pg_isready -U otc_admin -d onetowncity_saas"]
+      interval: 5s
       timeout: 5s
       retries: 5
-
-  # ── PgBouncer (connection pooler) ──────────────────────────────────────────
-  pgbouncer:
-    image: edoburu/pgbouncer:latest
-    container_name: otc_pgbouncer
-    restart: unless-stopped
-    depends_on:
-      postgres:
-        condition: service_healthy
-    environment:
-      DATABASE_URL: postgres://prajith:${POSTGRES_PASSWORD:-devpassword}@postgres/onetowncity
-      POOL_MODE: transaction
-      MAX_CLIENT_CONN: 200
-      DEFAULT_POOL_SIZE: 20
-      AUTH_TYPE: scram-sha-256
-    ports:
-      - "6432:5432"
+    deploy:
+      resources:
+        limits:
+          memory: 2048M
 
 volumes:
   postgres_data:
-

@@ -1,23 +1,24 @@
 use axum::{
     Router,
-    http::{HeaderValue, Method},
+    http::{HeaderName, HeaderValue, Method, header},
     response::Json,
     routing::get,
 };
 use serde_json::{Value, json};
 use sqlx::PgPool;
 use std::sync::Arc;
+use std::time::Duration;
 use tower_http::{
-    cors::{CorsLayer, Any},
-    trace::TraceLayer,
     compression::CompressionLayer,
+    cors::CorsLayer,
     timeout::TimeoutLayer,
+    trace::TraceLayer,
 };
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
-use std::time::Duration;
 
-mod db;
-mod error;
+mod auth;
+mod handlers;
+mod models;
 mod routes;
 
 /// Shared application state
@@ -30,24 +31,15 @@ async fn main() -> anyhow::Result<()> {
     // Load .env (non-fatal if missing)
     dotenvy::dotenv().ok();
 
-    // Initialize tracing + OpenTelemetry stdout exporter
+    // Initialize tracing
     init_tracing();
 
-    // Initialize Sentry (no-op if DSN not set)
-    let _sentry = sentry::init((
-        std::env::var("SENTRY_DSN").unwrap_or_default(),
-        sentry::ClientOptions {
-            release: sentry::release_name!(),
-            traces_sample_rate: 1.0,
-            ..Default::default()
-        },
-    ));
-
-    // Database connection pool
+    // Database connection pool (max 15 connections for local 2GB footprint)
     let database_url = std::env::var("DATABASE_URL")
-        .expect("DATABASE_URL must be set");
+        .unwrap_or_else(|_| "postgresql://otc_admin:otc_local_password@127.0.0.1:5432/onetowncity_saas".into());
+
     let pool = sqlx::postgres::PgPoolOptions::new()
-        .max_connections(20)
+        .max_connections(15)
         .min_connections(2)
         .acquire_timeout(Duration::from_secs(5))
         .connect(&database_url)
@@ -58,14 +50,29 @@ async fn main() -> anyhow::Result<()> {
 
     let state = Arc::new(AppState { db: pool });
 
-    // CORS — allow localhost dev origins
+    // CORS — allow localhost and 127.0.0.1 for browser and Playwright testing
     let cors = CorsLayer::new()
         .allow_origin([
             "http://localhost:3000".parse::<HeaderValue>()?,
+            "http://127.0.0.1:3000".parse::<HeaderValue>()?,
             "https://localhost:3000".parse::<HeaderValue>()?,
+            "https://127.0.0.1:3000".parse::<HeaderValue>()?,
         ])
-        .allow_methods([Method::GET, Method::POST, Method::PUT, Method::DELETE, Method::OPTIONS])
-        .allow_headers(Any)
+        .allow_methods([
+            Method::GET,
+            Method::POST,
+            Method::PATCH,
+            Method::PUT,
+            Method::DELETE,
+            Method::OPTIONS,
+        ])
+        .allow_headers([
+            header::CONTENT_TYPE,
+            header::AUTHORIZATION,
+            header::ACCEPT,
+            HeaderName::from_static("x-user-id"),
+            HeaderName::from_static("x-tenant-persona"),
+        ])
         .max_age(Duration::from_secs(3600));
 
     let app = Router::new()
@@ -74,12 +81,15 @@ async fn main() -> anyhow::Result<()> {
         .layer(cors)
         .layer(TraceLayer::new_for_http())
         .layer(CompressionLayer::new())
-        .layer(TimeoutLayer::new(Duration::from_secs(30)))
+        .layer(TimeoutLayer::with_status_code(
+            axum::http::StatusCode::REQUEST_TIMEOUT,
+            Duration::from_secs(30),
+        ))
         .with_state(state);
 
-    let bind_addr = std::env::var("BIND_ADDR").unwrap_or_else(|_| "0.0.0.0:8080".into());
+    let bind_addr = std::env::var("BIND_ADDR").unwrap_or_else(|_| "127.0.0.1:8080".into());
     let listener = tokio::net::TcpListener::bind(&bind_addr).await?;
-    tracing::info!("🚀 Listening on {}", bind_addr);
+    tracing::info!("Server listening on http://{}", bind_addr);
 
     axum::serve(listener, app)
         .with_graceful_shutdown(shutdown_signal())
@@ -93,29 +103,21 @@ async fn health_handler() -> Json<Value> {
 }
 
 fn init_tracing() {
-    use opentelemetry_sdk::trace::TracerProvider;
-    use opentelemetry_stdout::SpanExporter;
-    use tracing_opentelemetry::OpenTelemetryLayer;
-
-    let exporter = SpanExporter::default();
-    let provider = TracerProvider::builder()
-        .with_simple_exporter(exporter)
-        .build();
-
-    let tracer = opentelemetry::trace::TracerProvider::tracer(&provider, "one_town_city");
-
     tracing_subscriber::registry()
-        .with(tracing_subscriber::EnvFilter::try_from_default_env()
-            .unwrap_or_else(|_| "one_town_city=debug,tower_http=debug,axum=debug".into()))
-        .with(tracing_subscriber::fmt::layer().json())
-        .with(OpenTelemetryLayer::new(tracer))
+        .with(
+            tracing_subscriber::EnvFilter::try_from_default_env()
+                .unwrap_or_else(|_| "one_town_city=info,tower_http=info,axum=info".into()),
+        )
+        .with(tracing_subscriber::fmt::layer())
         .init();
 }
 
 async fn shutdown_signal() {
     use tokio::signal;
     let ctrl_c = async {
-        signal::ctrl_c().await.expect("Failed to install Ctrl+C handler");
+        signal::ctrl_c()
+            .await
+            .expect("Failed to install Ctrl+C handler");
     };
     #[cfg(unix)]
     let terminate = async {
@@ -128,7 +130,7 @@ async fn shutdown_signal() {
     let terminate = std::future::pending::<()>();
 
     tokio::select! {
-        _ = ctrl_c => { tracing::info!("Ctrl-C received, shutting down..."); },
-        _ = terminate => { tracing::info!("SIGTERM received, shutting down..."); },
+        _ = ctrl_c => { tracing::info!("Ctrl-C received, shutting down gracefully"); },
+        _ = terminate => { tracing::info!("SIGTERM received, shutting down gracefully"); },
     }
 }

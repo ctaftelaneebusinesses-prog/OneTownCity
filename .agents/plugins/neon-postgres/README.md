@@ -1,0 +1,192 @@
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://neon.com/brand/neon-logo-dark-color.svg?new">
+  <source media="(prefers-color-scheme: light)" srcset="https://neon.com/brand/neon-logo-light-color.svg?new">
+  <img width="250px" alt="Neon Logo fallback" src="https://neon.com/brand/neon-logo-dark-color.svg?new">
+</picture>
+
+# Agent Skills
+
+A collection of [Agent Skills](https://agentskills.io/) and agent integrations for Neon — a complete set of cloud backend primitives built around Lakebase Postgres, for developers, startups, and agent platforms, from Databricks.
+
+## What are Agent Skills?
+
+Skills are folders of instructions, scripts, and resources that agents can discover and use to do things more accurately and efficiently. Once installed, skills are automatically invoked by the agent upon detection of relevant tasks.
+
+It all starts with the `SKILL.md` file in the skill's directory. It's the entry point and allows agents to progressively discover information as needed.
+
+## Available Skills
+
+### Neon
+
+[![neon](https://shieldcn.dev/skills/installs/neondatabase/agent-skills/neon.svg?variant=branded&size=xs&label=neon)](https://skills.sh/neondatabase/agent-skills/neon)
+
+An overview of Neon for apps and agents — Lakebase Postgres, Managed Better Auth, Realtime, Object Storage, Functions, the Data API, and AI Gateway — and how to get started. Includes Claimable Neon for use with no Neon account.
+
+### Neon Postgres
+
+[![neon-postgres](https://shieldcn.dev/skills/installs/neondatabase/agent-skills/neon-postgres.svg?variant=branded&size=xs&label=neon-postgres)](https://skills.sh/neondatabase/agent-skills/neon-postgres)
+
+A comprehensive index of documentation and best practices for Lakebase Postgres on Neon, to set your agents up for success.
+
+### Neon Auth
+
+[![neon-auth](https://shieldcn.dev/skills/installs/neondatabase/agent-skills/neon-auth.svg?variant=branded&size=xs&label=neon-auth)](https://skills.sh/neondatabase/agent-skills/neon-auth)
+
+Neon Auth (Managed Better Auth) for login, users, and sessions that branch with the database, including which Better Auth plugins are supported and when to run self-managed Better Auth on Neon instead.
+
+### Neon Postgres Agent Platforms
+
+[![neon-postgres-agent-platforms](https://shieldcn.dev/skills/installs/neondatabase/neon-for-agent-platforms/neon-postgres-agent-platforms.svg?variant=branded&size=xs&label=neon-postgres-agent-platforms)](https://skills.sh/neondatabase/neon-for-agent-platforms/neon-postgres-agent-platforms)
+
+For agent platforms, codegen tools, and multi-tenant SaaS products that provision and run Lakebase Postgres, Object Storage, Functions, Managed Better Auth, and/or AI Gateway access for their users. Includes a companion skill and samples in [neondatabase/neon-for-agent-platforms](https://github.com/neondatabase/neon-for-agent-platforms).
+
+### Neon Postgres Branches
+
+[![neon-postgres-branches](https://shieldcn.dev/skills/installs/neondatabase/agent-skills/neon-postgres-branches.svg?variant=branded&size=xs&label=neon-postgres-branches)](https://skills.sh/neondatabase/agent-skills/neon-postgres-branches)
+
+Choose and create the right Neon branch type for migration testing and isolated development workflows, including schema-only branches for sensitive data and reset-from-parent workflows to quickly realign child branches.
+
+### Neon Postgres Egress Optimizer
+
+[![neon-postgres-egress-optimizer](https://shieldcn.dev/skills/installs/neondatabase/agent-skills/neon-postgres-egress-optimizer.svg?variant=branded&size=xs&label=neon-postgres-egress-optimizer)](https://skills.sh/neondatabase/agent-skills/neon-postgres-egress-optimizer)
+
+Diagnose and fix excessive Postgres egress (network data transfer) in a codebase. Use when investigating high database bills, unexpected data transfer costs, or query overfetching.
+
+### Neon Object Storage
+
+[![neon-object-storage](https://shieldcn.dev/skills/installs/neondatabase/agent-skills/neon-object-storage.svg?variant=branded&size=xs&label=neon-object-storage)](https://skills.sh/neondatabase/agent-skills/neon-object-storage)
+
+S3-compatible object storage that branches with your Neon project, so files and database rows stay in sync across dev, preview, and production environments.
+
+### Neon AI Gateway
+
+[![neon-ai-gateway](https://shieldcn.dev/skills/installs/neondatabase/agent-skills/neon-ai-gateway.svg?variant=branded&size=xs&label=neon-ai-gateway)](https://skills.sh/neondatabase/agent-skills/neon-ai-gateway)
+
+One API and one Neon credential for frontier and open-source LLMs from multiple providers, built into your branch and compatible with the OpenAI, Anthropic, and Vercel AI SDKs.
+
+### Neon Functions
+
+[![neon-functions](https://shieldcn.dev/skills/installs/neondatabase/agent-skills/neon-functions.svg?variant=branded&size=xs&label=neon-functions)](https://skills.sh/neondatabase/agent-skills/neon-functions)
+
+Long-running, serverless Node.js HTTP functions deployed onto your Neon branch, with `DATABASE_URL` injected automatically and compute that runs next to your data.
+
+### Neon Realtime
+
+[![neon-realtime](https://shieldcn.dev/skills/installs/neondatabase/agent-skills/neon-realtime.svg?variant=branded&size=xs&label=neon-realtime)](https://skills.sh/neondatabase/agent-skills/neon-realtime)
+
+Neon Realtime makes any SQL query live. Build realtime, reactive apps and agents on Lakebase Postgres, with type-safe live queries and optimistic mutations.
+
+## Installation
+
+```bash
+npx skills add neondatabase/agent-skills
+```
+
+### Agent Plugin
+
+The repository root is a portable [Agent Plugins v1](https://agent-plugins.org/specification) package, so any conforming client can install it straight from this repo. The root [`plugin.json`](plugin.json) declares the plugin, [`mcp.json`](mcp.json) declares the [Neon MCP Server](https://mcp.neon.tech), and the skills are the directories under `skills/`.
+
+The Claude Code and Cursor packaging under `plugins/` remains available for clients that expect those formats.
+
+### Antigravity Plugin
+
+Antigravity reads its Marketplace metadata from [`.antigravity-plugin/plugin.json`](.antigravity-plugin/plugin.json) and its native Neon MCP Server configuration from [`mcp_config.json`](mcp_config.json). Install the plugin from this repository:
+
+```bash
+agy plugin install https://github.com/neondatabase/agent-skills
+```
+
+Confirm that Antigravity discovered the plugin, its skills, and the MCP server:
+
+```bash
+agy plugin list
+```
+
+To authenticate, run `/mcp` in Antigravity, select the Neon MCP server, and complete the OAuth flow.
+
+### Claude Code Plugin
+
+You can also install the skills as a Claude Code plugin, which bundles the Neon agent skills and the [Neon MCP Server](https://mcp.neon.tech) for natural language database management:
+
+```
+/plugin marketplace add neondatabase/agent-skills
+/plugin install neon-postgres@neon
+```
+
+After installation, you'll be prompted to authenticate with Neon via OAuth when you first use MCP tools.
+
+The top-level `skills/` directory remains the source of truth. Plugin folders ship real copies of the skill directories they expose, regenerated with `npm run sync:plugins` — see [CONTRIBUTING.md](CONTRIBUTING.md) for details.
+
+### Cursor Plugin
+
+This repository also includes Cursor plugin packaging with the same scope as the Claude plugin (the Neon agent skills and the Neon MCP Server).
+
+Run this command in chat:
+
+```text
+/add-plugin neon-postgres
+```
+
+### Kimi Code Plugin
+
+Kimi Code CLI reads its own manifest at [`kimi.plugin.json`](kimi.plugin.json), which points at the skills under `skills/` and declares the [Neon MCP Server](https://mcp.neon.tech). Install it from this repo in chat:
+
+```text
+/plugins install https://github.com/neondatabase/agent-skills
+```
+
+Plugin changes apply to new sessions, so run `/new` afterward.
+
+### Pi
+
+You can also install the skills in [Pi](https://pi.dev) from npm:
+
+```bash
+pi install npm:@neon/skills
+```
+
+Or straight from this repo:
+
+```bash
+pi install git:github.com/neondatabase/agent-skills
+```
+
+## Usage
+
+Example prompts:
+
+```
+Get started with Neon
+```
+
+```
+Recommend a connection method for this project
+```
+
+```
+Set up Drizzle ORM with Neon
+```
+
+```
+Set up Neon Auth for my Next.js app
+```
+
+```
+Query the database using neon-js
+```
+
+```
+Create a new Neon branch using the API
+```
+
+```
+Use the serverless driver for edge functions
+```
+
+```
+Give me a quick temporary Postgres database
+```
+
+```
+Why is my Neon bill so high?
+```
