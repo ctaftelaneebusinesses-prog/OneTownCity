@@ -37,3 +37,7 @@ docker-compose.override.yml
 
 # ── Reference Archive ───────────────────────────────────────
 oldfiles/
+
+# ── Test Artifacts ──────────────────────────────────────────
+public/e2e-screenshots/
+
