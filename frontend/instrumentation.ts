@@ -7,7 +7,9 @@ export async function register() {
     const { OTLPTraceExporter } = await import(
       "@opentelemetry/exporter-trace-otlp-http"
     );
-    const { Resource } = await import("@opentelemetry/resources");
+    // OTel v2: Resource exported as default; fall back to named export for compatibility
+    const ResourceMod = await import("@opentelemetry/resources");
+    const Resource = (ResourceMod as any).Resource ?? ResourceMod.default;
     const {
       SEMRESATTRS_SERVICE_NAME,
     } = await import("@opentelemetry/semantic-conventions");

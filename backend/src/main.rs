@@ -93,12 +93,12 @@ async fn health_handler() -> Json<Value> {
 }
 
 fn init_tracing() {
-    use opentelemetry_sdk::trace::SdkTracerProvider;
+    use opentelemetry_sdk::trace::TracerProvider;
     use opentelemetry_stdout::SpanExporter;
     use tracing_opentelemetry::OpenTelemetryLayer;
 
     let exporter = SpanExporter::default();
-    let provider = SdkTracerProvider::builder()
+    let provider = TracerProvider::builder()
         .with_simple_exporter(exporter)
         .build();
 
