@@ -916,22 +916,28 @@ pub async fn record_search_telemetry(
     State(state): State<Arc<AppState>>,
     Json(dto): Json<SearchTelemetryRequest>,
 ) -> Result<(StatusCode, Json<Value>), (StatusCode, Json<Value>)> {
-    let sanitized_query = crate::validation::sanitize_text(&dto.query_text);
+    let raw_q = dto.query.as_deref().or(dto.query_text.as_deref()).unwrap_or("");
+    let sanitized_query = crate::validation::sanitize_text(raw_q);
     let query_trimmed = if sanitized_query.len() > 255 {
         sanitized_query[..255].to_string()
     } else {
         sanitized_query
     };
+    let count = dto.result_count.or(dto.results_count).unwrap_or(0);
+    let category = dto.category_filter.map(|c| crate::validation::sanitize_text(&c));
 
     sqlx::query!(
         r#"
-        INSERT INTO search_telemetry (id, town, query_text, results_count, led_to_action, created_at)
-        VALUES ($1, $2, $3, $4, $5, NOW())
+        INSERT INTO search_telemetry (id, town, query_text, query, results_count, result_count, category_filter, led_to_action, created_at)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())
         "#,
         Uuid::new_v4(),
         dto.town,
         query_trimmed,
-        dto.results_count,
+        query_trimmed,
+        count,
+        count,
+        category,
         dto.led_to_action.unwrap_or(false)
     )
     .execute(&state.db)

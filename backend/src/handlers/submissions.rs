@@ -77,13 +77,14 @@ pub async fn submit_listing(
     let org_id = Uuid::new_v4();
     let org_name = format!("{} Entity", sanitized_name);
     let org_slug = format!("{}-tenant", slug);
+    const FALLBACK_FREE_PLAN_ID: Uuid = Uuid::from_u128(0x11111111_1111_1111_1111_111111111101);
     let plan_id = sqlx::query_scalar!(
         r#"SELECT id FROM plans WHERE tier = 'free' LIMIT 1"#
     )
     .fetch_optional(&state.db)
     .await
     .unwrap_or(None)
-    .unwrap_or_else(|| Uuid::parse_str("11111111-1111-1111-1111-111111111101").unwrap());
+    .unwrap_or(FALLBACK_FREE_PLAN_ID);
 
     sqlx::query!(
         r#"

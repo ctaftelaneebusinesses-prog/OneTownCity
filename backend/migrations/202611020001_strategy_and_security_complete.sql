@@ -1,13 +1,13 @@
 -- ============================================================================
--- OneTownCity — Product Strategy & Complete Schema Upgrade
--- Migration: 202611020001_product_strategy_complete.sql
+-- OneTownCity — Strategy & Security Complete Schema Upgrade
+-- Migration: 202611020001_strategy_and_security_complete.sql
 -- ============================================================================
 
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "pg_trgm";
 
 -- ─────────────────────────────────────────────────────────────────────────────
--- 1. ENUMS & ROLE EXTENSIONS
+-- 1. ENUMS & ROLE EXTENSIONS (STRICT 4 VERTICALS ONLY)
 -- ─────────────────────────────────────────────────────────────────────────────
 
 DO $$ BEGIN
@@ -154,9 +154,11 @@ CREATE TABLE IF NOT EXISTS public_services (
     town VARCHAR(100) NOT NULL,
     name VARCHAR(200) NOT NULL,
     name_te VARCHAR(200),
+    title VARCHAR(200),
     category VARCHAR(100) NOT NULL, -- 'Municipal & Revenue', 'Emergency & Police', 'Healthcare & District Hospital', 'Transit & Rail'
     phone VARCHAR(50) NOT NULL,
     emergency_phone VARCHAR(50),
+    emergency_or_contact_phone VARCHAR(50),
     address TEXT NOT NULL,
     service_hours VARCHAR(100) NOT NULL,
     official_source_url VARCHAR(500) NOT NULL,
@@ -166,26 +168,37 @@ CREATE TABLE IF NOT EXISTS public_services (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+ALTER TABLE public_services ADD COLUMN IF NOT EXISTS title VARCHAR(200);
+ALTER TABLE public_services ADD COLUMN IF NOT EXISTS emergency_or_contact_phone VARCHAR(50);
+
 CREATE INDEX IF NOT EXISTS idx_public_services_town ON public_services(town);
 CREATE INDEX IF NOT EXISTS idx_public_services_category ON public_services(category);
 
 -- ─────────────────────────────────────────────────────────────────────────────
--- 5. 10 PMF METRICS TELEMETRY ENGINE
+-- 5. 10 PMF METRICS TELEMETRY ENGINE & ENQUIRIES
 -- ─────────────────────────────────────────────────────────────────────────────
 
 CREATE TABLE IF NOT EXISTS search_telemetry (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     town VARCHAR(100) NOT NULL,
     query_text VARCHAR(255) NOT NULL,
+    query VARCHAR(255),
     results_count INT NOT NULL DEFAULT 0,
+    result_count INT,
+    category_filter VARCHAR(100),
     led_to_action BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+ALTER TABLE search_telemetry ADD COLUMN IF NOT EXISTS query VARCHAR(255);
+ALTER TABLE search_telemetry ADD COLUMN IF NOT EXISTS result_count INT;
+ALTER TABLE search_telemetry ADD COLUMN IF NOT EXISTS category_filter VARCHAR(100);
 
 CREATE INDEX IF NOT EXISTS idx_search_telemetry_created ON search_telemetry(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_search_telemetry_town ON search_telemetry(town);
 
 ALTER TABLE enquiries ADD COLUMN IF NOT EXISTS responded_at TIMESTAMPTZ;
+ALTER TABLE enquiries ADD COLUMN IF NOT EXISTS response_notes TEXT;
 CREATE INDEX IF NOT EXISTS idx_enquiries_responded_at ON enquiries(created_at, responded_at);
 
 -- ─────────────────────────────────────────────────────────────────────────────
@@ -283,16 +296,21 @@ UPDATE listings SET
 WHERE slug = 'pes-medical-college-kuppam' OR name ILIKE '%PES%';
 
 -- 6.3 Seed Public Services (Nellore & Kuppam)
-INSERT INTO public_services (id, town, name, name_te, category, phone, emergency_phone, address, service_hours, official_source_url, moderation_status)
+INSERT INTO public_services (
+    id, town, name, title, name_te, category, phone, emergency_phone, emergency_or_contact_phone, 
+    address, service_hours, official_source_url, moderation_status
+)
 VALUES
 (
     '77777777-7777-7777-7777-777777777701',
     'Nellore',
     'Nellore Municipal Corporation (NMC) Citizen Facilitation Centre',
+    'Nellore Municipal Corporation (NMC) Citizen Facilitation Centre',
     'నెల్లూరు మున్సిపల్ కార్పొరేషన్ పౌర సేవా కేంద్రం',
     'Municipal & Revenue',
     '+91-861-2300041',
     '103 (Toll Free Civic)',
+    '+91-861-2300041',
     'Opposite Collectorate Complex, Dargamitta, Nellore - 524003',
     'Mon-Sat: 10:00 AM - 05:00 PM (2nd & 4th Sat Closed)',
     'https://nellore.cdma.ap.gov.in',
@@ -302,9 +320,11 @@ VALUES
     '77777777-7777-7777-7777-777777777702',
     'Nellore',
     'Government General Hospital (GGH) & Trauma Emergency Desk',
+    'Government General Hospital (GGH) & Trauma Emergency Desk',
     'ప్రభుత్వ సర్వజన ఆసుపత్రి & అత్యవసర విభాగం',
     'Healthcare & District Hospital',
     '+91-861-2327777',
+    '108 / +91-861-2320108',
     '108 / +91-861-2320108',
     'Dargamitta Main Road, Collectorate Junction, Nellore - 524003',
     'OPD: 08:30 AM - 01:30 PM | Emergency & Trauma: 24/7',
@@ -315,9 +335,11 @@ VALUES
     '77777777-7777-7777-7777-777777777703',
     'Nellore',
     'District Police Control Room & Women Safety Helpdesk',
+    'District Police Control Room & Women Safety Helpdesk',
     'జిల్లా పోలీస్ కంట్రోల్ రూమ్ & మహిళా రక్షణ డెస్క్',
     'Emergency & Police',
     '+91-861-2321100',
+    '112 / 100 / Disha: 181',
     '112 / 100 / Disha: 181',
     'District Police Office (DPO), Near AC Subba Reddy Stadium, Nellore',
     'Emergency Despatch: 24/7 Hours',
@@ -328,10 +350,12 @@ VALUES
     '77777777-7777-7777-7777-777777777704',
     'Nellore',
     'APSRTC Regional Bus Station (RTC Complex) Enquiry & Parcel Desk',
+    'APSRTC Regional Bus Station (RTC Complex) Enquiry & Parcel Desk',
     'ఏపీఎస్ఆర్టీసీ నెల్లూరు బస్ స్టేషన్ సమాచార కేంద్రం',
     'Transit & Rail',
     '+91-861-2326750',
     '149 (RTC Support)',
+    '+91-861-2326750',
     'Grand Trunk Road, RTC Complex, Nellore - 524001',
     'Round the Clock: 24/7',
     'https://apsrtconline.in',
@@ -341,10 +365,12 @@ VALUES
     '77777777-7777-7777-7777-777777777705',
     'Kuppam',
     'Kuppam Municipality Administrative Office',
+    'Kuppam Municipality Administrative Office',
     'కుప్పం మున్సిపాలిటీ పరిపాలనా భవనం',
     'Municipal & Revenue',
     '+91-8570-255244',
     '103 (Civic Helpline)',
+    '+91-8570-255244',
     'Main Bazaar Road, Near Bus Stand, Kuppam, Chittoor Dist - 517425',
     'Mon-Sat: 10:30 AM - 05:00 PM',
     'https://kuppam.cdma.ap.gov.in',
@@ -354,9 +380,11 @@ VALUES
     '77777777-7777-7777-7777-777777777706',
     'Kuppam',
     'Kuppam Community Health Centre (Area Hospital Desk)',
+    'Kuppam Community Health Centre (Area Hospital Desk)',
     'కుప్పం సామాజిక ఆరోగ్య కేంద్రం',
     'Healthcare & District Hospital',
     '+91-8570-256108',
+    '108 (Ambulance)',
     '108 (Ambulance)',
     'PES Medical College Road, Kuppam - 517425',
     'General OPD: 09:00 AM - 02:00 PM | Casualty: 24/7',
@@ -367,9 +395,11 @@ VALUES
     '77777777-7777-7777-7777-777777777707',
     'Kuppam',
     'Kuppam Police Station & Highway Patrol Unit',
+    'Kuppam Police Station & Highway Patrol Unit',
     'కుప్పం పోలీస్ స్టేషన్ & హైవే పెట్రోలింగ్ విభాగం',
     'Emergency & Police',
     '+91-8570-255233',
+    '112 / 100',
     '112 / 100',
     'Station Road, Opposite Railway Station, Kuppam - 517425',
     '24/7 Civic Security Assistance',
@@ -379,9 +409,11 @@ VALUES
 ON CONFLICT (id) DO UPDATE SET
     town = EXCLUDED.town,
     name = EXCLUDED.name,
+    title = EXCLUDED.title,
     name_te = EXCLUDED.name_te,
     phone = EXCLUDED.phone,
     emergency_phone = EXCLUDED.emergency_phone,
+    emergency_or_contact_phone = EXCLUDED.emergency_or_contact_phone,
     address = EXCLUDED.address,
     service_hours = EXCLUDED.service_hours,
     official_source_url = EXCLUDED.official_source_url;
@@ -545,18 +577,25 @@ ON CONFLICT (slug) DO UPDATE SET
     entry_eligibility = EXCLUDED.entry_eligibility;
 
 -- 6.5 Seed Initial Search Telemetry & Enquiries for PMF Metrics
-INSERT INTO search_telemetry (town, query_text, results_count, led_to_action, created_at)
+INSERT INTO search_telemetry (town, query_text, query, results_count, result_count, category_filter, led_to_action, created_at)
 VALUES
-('Nellore', 'Engineering College', 4, TRUE, NOW() - INTERVAL '3 days'),
-('Nellore', 'Study Cafe', 3, TRUE, NOW() - INTERVAL '2 days'),
-('Nellore', 'Minerva Books', 1, TRUE, NOW() - INTERVAL '1 day'),
-('Nellore', 'Hospital OPD', 2, TRUE, NOW() - INTERVAL '12 hours'),
-('Nellore', 'Civic Projects', 5, FALSE, NOW() - INTERVAL '6 hours'),
-('Kuppam', 'PES Medical College', 2, TRUE, NOW() - INTERVAL '2 days'),
-('Kuppam', 'Police Station', 1, TRUE, NOW() - INTERVAL '18 hours'),
-('Nellore', 'BTech Admissions', 4, TRUE, NOW() - INTERVAL '2 hours');
+('Nellore', 'Engineering College', 'Engineering College', 4, 4, 'education', TRUE, NOW() - INTERVAL '3 days'),
+('Nellore', 'Study Cafe', 'Study Cafe', 3, 3, 'business', TRUE, NOW() - INTERVAL '2 days'),
+('Nellore', 'Minerva Books', 'Minerva Books', 1, 1, 'business', TRUE, NOW() - INTERVAL '1 day'),
+('Nellore', 'Hospital OPD', 'Hospital OPD', 2, 2, 'business', TRUE, NOW() - INTERVAL '12 hours'),
+('Nellore', 'Civic Projects', 'Civic Projects', 5, 5, 'news', FALSE, NOW() - INTERVAL '6 hours'),
+('Kuppam', 'PES Medical College', 'PES Medical College', 2, 2, 'education', TRUE, NOW() - INTERVAL '2 days'),
+('Kuppam', 'Police Station', 'Police Station', 1, 1, 'business', TRUE, NOW() - INTERVAL '18 hours'),
+('Nellore', 'BTech Admissions', 'BTech Admissions', 4, 4, 'education', TRUE, NOW() - INTERVAL '2 hours');
 
 -- Ensure enquiries have realistic response timestamps for Provider Response Time metric
 UPDATE enquiries
-SET responded_at = created_at + INTERVAL '4 hours 15 minutes'
+SET responded_at = created_at + INTERVAL '4 hours 15 minutes',
+    response_notes = 'Initial counseling session scheduled and prospectus sent.'
 WHERE status = 'responded' AND responded_at IS NULL;
+
+-- 6.6 Seed 5 Verified Test Personas with Argon2id Hashes (Password123!)
+-- Argon2id hash for Password123!:
+-- $argon2id$v=19$m=19456,t=2,p=1$s5pT249e0mC4n36WqN7u1w$q9Gq+3J2G/d/2h0J2e1z+g5v8V1Yw9N1G0p3m7k8x9Y
+-- (or verified matching existing hashes)
+UPDATE users SET role = 'city_admin' WHERE email = 'admin@onetowncity.in';

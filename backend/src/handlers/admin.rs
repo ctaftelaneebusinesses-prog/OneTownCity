@@ -366,6 +366,185 @@ pub async fn action_report(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// POST /api/v1/admin/listings/merge-duplicate (Merge Duplicate Listing into Canonical)
+// ─────────────────────────────────────────────────────────────────────────────
+
+pub async fn merge_duplicate_listing(
+    State(state): State<Arc<AppState>>,
+    admin: AdminUserContext,
+    Json(dto): Json<crate::models::MergeDuplicateListingDto>,
+) -> Result<Json<Value>, (StatusCode, Json<Value>)> {
+    if dto.canonical_listing_id == dto.duplicate_listing_id {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            Json(json!({ "error": "Canonical and duplicate listing IDs cannot be identical" })),
+        ));
+    }
+
+    // 1. Verify canonical listing exists and is not already closed
+    let canonical = sqlx::query!(
+        r#"
+        SELECT id, name, slug, search_aliases, is_closed
+        FROM listings
+        WHERE id = $1
+        "#,
+        dto.canonical_listing_id
+    )
+    .fetch_optional(&state.db)
+    .await
+    .map_err(|e| {
+        tracing::error!("Error fetching canonical listing: {}", e);
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({ "error": "Database error checking canonical listing" })),
+        )
+    })?;
+
+    let canonical = match canonical {
+        Some(c) => c,
+        None => {
+            return Err((
+                StatusCode::NOT_FOUND,
+                Json(json!({ "error": "Canonical listing not found" })),
+            ));
+        }
+    };
+
+    if canonical.is_closed {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            Json(json!({ "error": "Canonical listing is marked closed and cannot accept merges" })),
+        ));
+    }
+
+    // 2. Verify duplicate listing exists
+    let duplicate = sqlx::query!(
+        r#"
+        SELECT id, name, slug, is_closed
+        FROM listings
+        WHERE id = $1
+        "#,
+        dto.duplicate_listing_id
+    )
+    .fetch_optional(&state.db)
+    .await
+    .map_err(|e| {
+        tracing::error!("Error fetching duplicate listing: {}", e);
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({ "error": "Database error checking duplicate listing" })),
+        )
+    })?;
+
+    let duplicate = match duplicate {
+        Some(d) => d,
+        None => {
+            return Err((
+                StatusCode::NOT_FOUND,
+                Json(json!({ "error": "Duplicate listing not found" })),
+            ));
+        }
+    };
+
+    let review_reason = format!(
+        "Merged into canonical listing '{}' ({}) by city governance admin",
+        canonical.name, dto.canonical_listing_id
+    );
+
+    // 3. Mark duplicate listing as closed and rejected
+    sqlx::query!(
+        r#"
+        UPDATE listings
+        SET is_closed = TRUE,
+            moderation_status = 'rejected',
+            review_reason = $1,
+            reviewed_by = $2,
+            updated_at = NOW()
+        WHERE id = $3
+        "#,
+        review_reason,
+        admin.user_id,
+        dto.duplicate_listing_id
+    )
+    .execute(&state.db)
+    .await
+    .map_err(|e| {
+        tracing::error!("Error closing duplicate listing: {}", e);
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({ "error": "Database error closing duplicate listing" })),
+        )
+    })?;
+
+    // 4. Update canonical listing search_aliases to include duplicate name
+    let mut updated_aliases = canonical.search_aliases.unwrap_or_default();
+    if !updated_aliases.contains(&duplicate.name) {
+        if !updated_aliases.is_empty() {
+            updated_aliases.push_str(", ");
+        }
+        updated_aliases.push_str(&duplicate.name);
+
+        let _ = sqlx::query!(
+            r#"
+            UPDATE listings
+            SET search_aliases = $1, updated_at = NOW()
+            WHERE id = $2
+            "#,
+            updated_aliases,
+            dto.canonical_listing_id
+        )
+        .execute(&state.db)
+        .await;
+    }
+
+    // 5. Resolve any open reports pointing to this duplicate
+    let notes = dto.review_notes.as_deref().unwrap_or("Resolved via duplicate merge");
+    let _ = sqlx::query!(
+        r#"
+        UPDATE reports
+        SET status = 'resolved',
+            duplicate_of_listing_id = $1,
+            review_notes = $2,
+            reviewed_by = $3,
+            resolved_at = NOW(),
+            updated_at = NOW()
+        WHERE listing_id = $4 AND status = 'open'
+        "#,
+        dto.canonical_listing_id,
+        notes,
+        admin.user_id,
+        dto.duplicate_listing_id
+    )
+    .execute(&state.db)
+    .await;
+
+    // 6. Record audit log
+    state.worker.enqueue(crate::worker::AuditJob {
+        entity_type: "listing".to_string(),
+        entity_id: dto.duplicate_listing_id.to_string(),
+        action: "listing_merged_duplicate".to_string(),
+        actor_id: Some(admin.user_id),
+        actor_role: format!("{:?}", admin.role),
+        payload: json!({
+            "canonical_listing_id": dto.canonical_listing_id,
+            "duplicate_listing_id": dto.duplicate_listing_id,
+            "canonical_name": canonical.name,
+            "duplicate_name": duplicate.name,
+            "notes": notes,
+        }),
+        simulate_dispatch: false,
+    });
+
+    Ok(Json(json!({
+        "status": "success",
+        "message": "Duplicate listing successfully merged and closed",
+        "canonical_listing_id": dto.canonical_listing_id,
+        "duplicate_listing_id": dto.duplicate_listing_id,
+        "is_closed": true
+    })))
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // GET /api/v1/admin/audit-logs (Immutable Governance Audit Trail)
 // ─────────────────────────────────────────────────────────────────────────────
 

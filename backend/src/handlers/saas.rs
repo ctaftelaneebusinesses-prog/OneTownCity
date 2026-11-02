@@ -160,15 +160,24 @@ pub async fn update_lead_status(
         }
     };
 
+    let notes_sanitized = dto.response_notes.as_deref().map(crate::validation::sanitize_text);
+
     let result = sqlx::query!(
         r#"
         UPDATE enquiries
-        SET status = $1, updated_at = NOW()
+        SET status = $1,
+            responded_at = CASE 
+                WHEN $1::enquiry_status = 'responded'::enquiry_status AND responded_at IS NULL THEN NOW() 
+                ELSE responded_at 
+            END,
+            response_notes = COALESCE($4, response_notes),
+            updated_at = NOW()
         WHERE id = $2 AND tenant_id = $3
         "#,
         new_status as _,
         id,
-        tenant.tenant_id
+        tenant.tenant_id,
+        notes_sanitized
     )
     .execute(&state.db)
     .await
@@ -368,29 +377,30 @@ pub async fn simulate_plan_upgrade(
 
 pub async fn reconfirm_listing(
     State(state): State<Arc<AppState>>,
+    tenant: VerifiedTenantContext,
     Path(id): Path<Uuid>,
 ) -> Result<Json<Value>, (StatusCode, Json<Value>)> {
-    let result = sqlx::query!(
+    // 1. Verify listing exists and belongs strictly to the authenticated tenant organization
+    let listing = sqlx::query!(
         r#"
-        UPDATE listings
-        SET last_confirmed_at = NOW(), updated_at = NOW()
+        SELECT id, name, tenant_id
+        FROM listings
         WHERE id = $1
-        RETURNING id, name, last_confirmed_at
         "#,
         id
     )
     .fetch_optional(&state.db)
     .await
     .map_err(|e| {
-        tracing::error!("Error reconfirming listing: {}", e);
+        tracing::error!("Error checking listing ownership: {}", e);
         (
             StatusCode::INTERNAL_SERVER_ERROR,
-            Json(json!({ "error": "Database error" })),
+            Json(json!({ "error": "Database error checking listing" })),
         )
     })?;
 
-    let row = match result {
-        Some(r) => r,
+    let listing = match listing {
+        Some(l) => l,
         None => {
             return Err((
                 StatusCode::NOT_FOUND,
@@ -399,15 +409,43 @@ pub async fn reconfirm_listing(
         }
     };
 
+    if listing.tenant_id != tenant.tenant_id {
+        return Err((
+            StatusCode::FORBIDDEN,
+            Json(json!({ "error": "Access denied: Listing belongs to a different tenant organization" })),
+        ));
+    }
+
+    let result = sqlx::query!(
+        r#"
+        UPDATE listings
+        SET last_confirmed_at = NOW(), updated_at = NOW()
+        WHERE id = $1 AND tenant_id = $2
+        RETURNING id, name, last_confirmed_at
+        "#,
+        id,
+        tenant.tenant_id
+    )
+    .fetch_one(&state.db)
+    .await
+    .map_err(|e| {
+        tracing::error!("Error reconfirming listing: {}", e);
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({ "error": "Database error updating confirmation" })),
+        )
+    })?;
+
     state.worker.enqueue(crate::worker::AuditJob {
         entity_type: "listing".to_string(),
-        entity_id: row.id.to_string(),
+        entity_id: result.id.to_string(),
         action: "reconfirmed".to_string(),
-        actor_id: None,
+        actor_id: Some(tenant.user_id),
         actor_role: "tenant_owner".to_string(),
         payload: json!({
-            "name": row.name,
-            "last_confirmed_at": row.last_confirmed_at,
+            "name": result.name,
+            "last_confirmed_at": result.last_confirmed_at,
+            "tenant_id": tenant.tenant_id,
             "note": "Owner 1-click reconfirmed profile is accurate and current"
         }),
         simulate_dispatch: false,
@@ -415,9 +453,9 @@ pub async fn reconfirm_listing(
 
     Ok(Json(json!({
         "status": "success",
-        "listing_id": row.id,
-        "name": row.name,
-        "last_confirmed_at": row.last_confirmed_at,
+        "listing_id": result.id,
+        "name": result.name,
+        "last_confirmed_at": result.last_confirmed_at,
         "message": "Listing details successfully reconfirmed as current"
     })))
 }

@@ -90,6 +90,7 @@ pub fn api_router(state: Arc<AppState>) -> Router<Arc<AppState>> {
         .route("/moderation/{id}", patch(admin::action_moderation_item))
         .route("/reports", get(admin::list_reports))
         .route("/reports/{id}", patch(admin::action_report))
+        .route("/listings/merge-duplicate", post(admin::merge_duplicate_listing))
         .route("/audit-logs", get(admin::list_audit_logs))
         .route("/metrics", get(admin::get_pmf_metrics))
         .layer(axum::middleware::from_fn(no_cache_headers));

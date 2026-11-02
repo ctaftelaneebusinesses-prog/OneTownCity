@@ -362,6 +362,7 @@ pub struct PlanUpgradeDto {
 #[derive(Debug, Clone, Deserialize)]
 pub struct StatusUpdateDto {
     pub status: String,
+    pub response_notes: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -575,9 +576,19 @@ pub struct PublicService {
 #[derive(Debug, Clone, Deserialize)]
 pub struct SearchTelemetryRequest {
     pub town: String,
-    pub query_text: String,
-    pub results_count: i32,
+    pub query_text: Option<String>,
+    pub query: Option<String>,
+    pub results_count: Option<i32>,
+    pub result_count: Option<i32>,
+    pub category_filter: Option<String>,
     pub led_to_action: Option<bool>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct MergeDuplicateListingDto {
+    pub canonical_listing_id: Uuid,
+    pub duplicate_listing_id: Uuid,
+    pub review_notes: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
