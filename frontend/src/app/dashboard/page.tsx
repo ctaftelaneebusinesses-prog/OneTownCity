@@ -101,8 +101,13 @@ export default function TenantDashboard() {
   const handleReconfirmListing = async () => {
     setIsReconfirming(true);
     try {
+      const headers: Record<string, string> = {
+        "x-user-id": currentUserId,
+        "x-tenant-persona": tenantPersona,
+      };
       const res = await fetch(`${API_BASE}/saas/listings/${tenantListingId}/reconfirm`, {
         method: "POST",
+        headers,
       });
       if (res.ok) {
         setReconfirmMessage("Listing freshness successfully reconfirmed for 30-day prominence cycle.");

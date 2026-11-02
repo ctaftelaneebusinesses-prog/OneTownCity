@@ -143,6 +143,13 @@ export default function AdminGovernancePage() {
   const [loading, setLoading] = useState<boolean>(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
+  // Duplicate Merger Tool State
+  const [canonicalId, setCanonicalId] = useState("");
+  const [duplicateId, setDuplicateId] = useState("");
+  const [mergeNotes, setMergeNotes] = useState("");
+  const [mergeLoading, setMergeLoading] = useState(false);
+  const [mergeStatus, setMergeStatus] = useState<{ type: "success" | "error"; message: string } | null>(null);
+
   const fetchGovernanceData = useCallback(async (signal?: AbortSignal) => {
     setLoading(true);
     try {
@@ -373,6 +380,54 @@ export default function AdminGovernancePage() {
       toast.error(err instanceof Error ? err.message : "Error resolving report");
     } finally {
       setActionLoading(null);
+    }
+  };
+
+  // Action: Merge Duplicate Listing into Canonical
+  const handleMergeDuplicate = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!canonicalId.trim() || !duplicateId.trim()) {
+      setMergeStatus({ type: "error", message: "Both Canonical Listing ID and Duplicate Listing ID are required." });
+      return;
+    }
+    setMergeLoading(true);
+    setMergeStatus(null);
+    try {
+      const res = await fetch(`${API_BASE}/admin/listings/merge-duplicate`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-user-id": "22222222-2222-2222-2222-222222222202",
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          canonical_listing_id: canonicalId.trim(),
+          duplicate_listing_id: duplicateId.trim(),
+          review_notes: mergeNotes.trim() || "Consolidated via City Admin duplicate merger tool",
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setMergeStatus({
+          type: "success",
+          message: `Successfully merged duplicate ${duplicateId.slice(0, 8)}... into canonical listing. Duplicate marked closed.`,
+        });
+        toast.success("Duplicate listing merged and closed successfully");
+        setCanonicalId("");
+        setDuplicateId("");
+        setMergeNotes("");
+        fetchGovernanceData();
+      } else {
+        const errMsg = data.error || "Failed to merge duplicate listing.";
+        setMergeStatus({ type: "error", message: errMsg });
+        toast.error(errMsg);
+      }
+    } catch (err: unknown) {
+      const errMsg = err instanceof Error ? err.message : "Network error during duplicate merge.";
+      setMergeStatus({ type: "error", message: errMsg });
+      toast.error(errMsg);
+    } finally {
+      setMergeLoading(false);
     }
   };
 
@@ -888,67 +943,162 @@ export default function AdminGovernancePage() {
 
         {/* TAB 04: CITIZEN ISSUE REPORTS */}
         {activeTab === "reports" && (
-          <div className="rounded-lg border border-[var(--border-grid)] bg-[var(--bg-surface)] shadow-sm overflow-hidden">
-            <div className="px-6 py-4 bg-[var(--bg-muted)]/60 border-b border-[var(--border-grid)] flex items-center justify-between">
-              <h3 className="font-mono text-xs font-bold uppercase tracking-wider text-[var(--ink-primary)]">
-                Citizen Issue Reports & Inaccuracy Flagging ({reports.length})
-              </h3>
-              <span className="font-mono text-[10px] text-[var(--ink-secondary)] uppercase">
-                Consumer Protection
-              </span>
+          <div className="space-y-6">
+            {/* Interactive Duplicate Listing Merger Tool */}
+            <div className="rounded-lg border border-[var(--border-grid)] bg-[var(--bg-surface)] p-6 shadow-sm">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 mb-4 border-b border-[var(--border-grid)] gap-2">
+                <div>
+                  <h4 className="font-mono text-sm font-bold uppercase tracking-wider text-[var(--ink-primary)] flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#FF4F17]" />
+                    Duplicate Listing Merger &amp; Canonical Consolidation
+                  </h4>
+                  <p className="font-mono text-xs text-[var(--ink-secondary)] mt-0.5">
+                    Closes the duplicate profile, sets moderation status to rejected, updates search aliases on canonical profile, and resolves associated citizen reports.
+                  </p>
+                </div>
+                <span className="font-mono text-[10px] uppercase font-bold text-[#FF4F17] bg-[#FF4F17]/10 px-2 py-0.5 rounded border border-[#FF4F17]/20">
+                  Governance Tool
+                </span>
+              </div>
+
+              <form onSubmit={handleMergeDuplicate} className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+                <div>
+                  <label className="block font-mono text-[10px] uppercase font-bold text-[var(--ink-secondary)] mb-1">
+                    Canonical Listing ID (Keep Active)
+                  </label>
+                  <input
+                    type="text"
+                    value={canonicalId}
+                    onChange={(e) => setCanonicalId(e.target.value)}
+                    placeholder="e.g. 55555555-5555-5555-5555-555555555501"
+                    className="w-full font-mono text-xs px-3 py-2 rounded border border-[var(--border-grid)] bg-[var(--bg-canvas)] text-[var(--ink-primary)] focus:outline-none focus:border-[var(--accent-signal)]"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-mono text-[10px] uppercase font-bold text-[var(--ink-secondary)] mb-1">
+                    Duplicate Listing ID (Mark Closed)
+                  </label>
+                  <input
+                    type="text"
+                    value={duplicateId}
+                    onChange={(e) => setDuplicateId(e.target.value)}
+                    placeholder="e.g. 55555555-5555-5555-5555-555555555502"
+                    className="w-full font-mono text-xs px-3 py-2 rounded border border-[var(--border-grid)] bg-[var(--bg-canvas)] text-[var(--ink-primary)] focus:outline-none focus:border-[var(--accent-signal)]"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-mono text-[10px] uppercase font-bold text-[var(--ink-secondary)] mb-1">
+                    Resolution Reason &amp; Notes
+                  </label>
+                  <input
+                    type="text"
+                    value={mergeNotes}
+                    onChange={(e) => setMergeNotes(e.target.value)}
+                    placeholder="e.g. Duplicate campus branch consolidated"
+                    className="w-full font-mono text-xs px-3 py-2 rounded border border-[var(--border-grid)] bg-[var(--bg-canvas)] text-[var(--ink-primary)] focus:outline-none focus:border-[var(--accent-signal)]"
+                  />
+                </div>
+
+                <div className="sm:col-span-3 flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-1">
+                  <div className="text-[11px] font-mono">
+                    {mergeStatus && (
+                      <span className={mergeStatus.type === "success" ? "text-emerald-700 font-bold" : "text-red-600 font-bold"}>
+                        {mergeStatus.message}
+                      </span>
+                    )}
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={mergeLoading || !canonicalId.trim() || !duplicateId.trim()}
+                    className="px-4 py-2 rounded bg-[#111110] text-[#F4F2EE] hover:bg-[#FF4F17] font-mono text-xs font-bold uppercase tracking-wider transition-colors disabled:opacity-50 inline-flex items-center gap-2 shrink-0 cursor-pointer"
+                  >
+                    {mergeLoading ? "Merging..." : "Merge Duplicate & Close Listing"}
+                  </button>
+                </div>
+              </form>
             </div>
 
-            {reports.length === 0 ? (
-              <div className="py-12 text-center font-mono text-xs text-[var(--ink-secondary)]">
-                No citizen reports registered.
+            <div className="rounded-lg border border-[var(--border-grid)] bg-[var(--bg-surface)] shadow-sm overflow-hidden">
+              <div className="px-6 py-4 bg-[var(--bg-muted)]/60 border-b border-[var(--border-grid)] flex items-center justify-between">
+                <h3 className="font-mono text-xs font-bold uppercase tracking-wider text-[var(--ink-primary)]">
+                  Citizen Issue Reports &amp; Inaccuracy Flagging ({reports.length})
+                </h3>
+                <span className="font-mono text-[10px] text-[var(--ink-secondary)] uppercase">
+                  Consumer Protection
+                </span>
               </div>
-            ) : (
-              <div className="divide-y divide-[var(--border-grid)]">
-                {reports.map((item) => (
-                  <div key={item.id} className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-[var(--bg-muted)]/20 transition-colors">
-                    <div className="space-y-1.5 flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-mono px-2 py-0.5 rounded text-[10px] uppercase font-bold bg-amber-100 text-amber-900 border border-amber-300">
-                          {item.reason.replace("_", " ")}
-                        </span>
-                        <span
-                          className={`font-mono px-2 py-0.5 rounded text-[10px] uppercase font-bold ${
-                            item.status === "open" ? "bg-amber-100 text-amber-900" : "bg-emerald-100 text-emerald-800"
-                          }`}
-                        >
-                          {item.status}
-                        </span>
-                      </div>
-                      <p className="font-sans text-xs text-[var(--ink-primary)]">
-                        {item.details}
-                      </p>
-                      <div className="flex items-center gap-4 font-mono text-xs text-[var(--ink-secondary)]">
-                        <span>Reported by: {item.reported_by_email || "Anonymous"}</span>
-                        <span>•</span>
-                        <span>{item.created_at.slice(0, 10)}</span>
-                      </div>
-                    </div>
 
-                    <div className="flex items-center gap-2 shrink-0">
-                      <button
-                        onClick={() => handleResolveReport(item.id, "resolved", item.reason)}
-                        disabled={actionLoading === item.id}
-                        className="px-3.5 py-1.5 rounded bg-emerald-800 text-white font-mono text-xs font-bold uppercase tracking-wider hover:bg-emerald-900 transition-colors disabled:opacity-50"
-                      >
-                        Resolve
-                      </button>
-                      <button
-                        onClick={() => handleResolveReport(item.id, "dismissed")}
-                        disabled={actionLoading === item.id}
-                        className="px-3 py-1.5 rounded border border-[var(--border-grid)] font-mono text-xs text-[var(--ink-secondary)] hover:border-[var(--ink-primary)] transition-colors disabled:opacity-50"
-                      >
-                        Dismiss
-                      </button>
+              {reports.length === 0 ? (
+                <div className="py-12 text-center font-mono text-xs text-[var(--ink-secondary)]">
+                  No citizen reports registered.
+                </div>
+              ) : (
+                <div className="divide-y divide-[var(--border-grid)]">
+                  {reports.map((item) => (
+                    <div key={item.id} className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-[var(--bg-muted)]/20 transition-colors">
+                      <div className="space-y-1.5 flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-mono px-2 py-0.5 rounded text-[10px] uppercase font-bold bg-amber-100 text-amber-900 border border-amber-300">
+                            {item.reason.replace("_", " ")}
+                          </span>
+                          <span
+                            className={`font-mono px-2 py-0.5 rounded text-[10px] uppercase font-bold ${
+                              item.status === "open" ? "bg-amber-100 text-amber-900" : "bg-emerald-100 text-emerald-800"
+                            }`}
+                          >
+                            {item.status}
+                          </span>
+                          {item.reason === "duplicate" && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setDuplicateId(item.listing_id);
+                                window.scrollTo({ top: 300, behavior: "smooth" });
+                                toast.info("Listing ID pre-filled in Duplicate Merger Tool above");
+                              }}
+                              className="font-mono text-[9px] uppercase font-bold text-[#FF4F17] hover:underline"
+                            >
+                              [Pre-fill in Merger Tool]
+                            </button>
+                          )}
+                        </div>
+                        <p className="font-sans text-xs text-[var(--ink-primary)]">
+                          {item.details}
+                        </p>
+                        <div className="flex items-center gap-4 font-mono text-xs text-[var(--ink-secondary)]">
+                          <span>Reported by: {item.reported_by_email || "Anonymous"}</span>
+                          <span>•</span>
+                          <span>{item.created_at.slice(0, 10)}</span>
+                          <span>•</span>
+                          <span>Target Listing: {item.listing_id}</span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 shrink-0">
+                        <button
+                          onClick={() => handleResolveReport(item.id, "resolved", item.reason)}
+                          disabled={actionLoading === item.id}
+                          className="px-3.5 py-1.5 rounded bg-emerald-800 text-white font-mono text-xs font-bold uppercase tracking-wider hover:bg-emerald-900 transition-colors disabled:opacity-50"
+                        >
+                          Resolve
+                        </button>
+                        <button
+                          onClick={() => handleResolveReport(item.id, "dismissed")}
+                          disabled={actionLoading === item.id}
+                          className="px-3 py-1.5 rounded border border-[var(--border-grid)] font-mono text-xs text-[var(--ink-secondary)] hover:border-[var(--ink-primary)] transition-colors disabled:opacity-50"
+                        >
+                          Dismiss
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            )}
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         )}
 

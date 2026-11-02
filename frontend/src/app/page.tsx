@@ -943,6 +943,61 @@ export default function DiscoveryHub() {
             </div>
           </div>
 
+          {/* Civic Verification Pipeline (cathrynlavery/diagram-design shadow-free editorial SVG) */}
+          <div className="rounded-xl border border-[#D8D3C8] bg-white p-4 sm:p-5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 mb-3 border-b border-[#D8D3C8] gap-2">
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="w-4 h-4 text-[#0D6847]" />
+                <span className="font-mono text-xs font-bold uppercase tracking-wider text-[#111110]">
+                  Civic Development &amp; Fact Verification Protocol
+                </span>
+              </div>
+              <span className="font-mono text-[10px] text-[#575551] uppercase font-mono">
+                Zero Speculation Guarantee • Source Mandate
+              </span>
+            </div>
+            <div className="w-full overflow-x-auto">
+              <svg
+                viewBox="0 0 900 70"
+                className="w-full min-w-[700px] h-auto"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                {/* Step 1: Source Ingestion */}
+                <rect x="10" y="10" width="180" height="50" rx="4" fill="#F4F2EE" stroke="#D8D3C8" strokeWidth="1.5" />
+                <text x="25" y="32" fill="#111110" fontSize="11" fontFamily="var(--font-jetbrains), monospace" fontWeight="700">01. OFFICIAL SOURCE</text>
+                <text x="25" y="48" fill="#575551" fontSize="9" fontFamily="var(--font-jetbrains), monospace">Govt Gazette / RTI / PR Link</text>
+
+                {/* Connector 1 */}
+                <path d="M190 35 H230" stroke="#FF4F17" strokeWidth="2" strokeDasharray="3 3" />
+                <polygon points="230,35 224,31 224,39" fill="#FF4F17" />
+
+                {/* Step 2: Editorial Fact Check */}
+                <rect x="235" y="10" width="190" height="50" rx="4" fill="#F4F2EE" stroke="#D8D3C8" strokeWidth="1.5" />
+                <text x="250" y="32" fill="#111110" fontSize="11" fontFamily="var(--font-jetbrains), monospace" fontWeight="700">02. DESK MODERATION</text>
+                <text x="250" y="48" fill="#575551" fontSize="9" fontFamily="var(--font-jetbrains), monospace">Budget &amp; Timeline Crosscheck</text>
+
+                {/* Connector 2 */}
+                <path d="M425 35 H465" stroke="#FF4F17" strokeWidth="2" strokeDasharray="3 3" />
+                <polygon points="465,35 459,31 459,39" fill="#FF4F17" />
+
+                {/* Step 3: Classification */}
+                <rect x="470" y="10" width="190" height="50" rx="4" fill="#F4F2EE" stroke="#D8D3C8" strokeWidth="1.5" />
+                <text x="485" y="32" fill="#111110" fontSize="11" fontFamily="var(--font-jetbrains), monospace" fontWeight="700">03. CLASSIFICATION</text>
+                <text x="485" y="48" fill="#D97706" fontSize="9" fontFamily="var(--font-jetbrains), monospace" fontWeight="700">Proposal vs Confirmed Fact</text>
+
+                {/* Connector 3 */}
+                <path d="M660 35 H700" stroke="#0D6847" strokeWidth="2" />
+                <polygon points="700,35 694,31 694,39" fill="#0D6847" />
+
+                {/* Step 4: Public Ledger Seal */}
+                <rect x="705" y="10" width="185" height="50" rx="4" fill="#0D6847" stroke="#0D6847" strokeWidth="1.5" />
+                <text x="720" y="32" fill="#FFFFFF" fontSize="11" fontFamily="var(--font-jetbrains), monospace" fontWeight="700">04. CIVIC SEAL</text>
+                <text x="720" y="48" fill="#EAE6DF" fontSize="9" fontFamily="var(--font-jetbrains), monospace">Immutable Town Record</text>
+              </svg>
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {filteredCalendarEvents.map((ev) => (
               <div
