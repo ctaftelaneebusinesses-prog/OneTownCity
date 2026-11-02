@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import { CheckCircle2, XCircle, AlertTriangle, ShieldCheck, RefreshCw } from "lucide-react";
+import { CheckCircle2, XCircle, AlertTriangle, ShieldCheck, RefreshCw, FileText, Check, X } from "lucide-react";
 import { useTown } from "@/components/TownContext";
 
 interface AdminListing {
@@ -36,14 +36,26 @@ interface AdminReport {
   created_at: string;
 }
 
+interface AdminAuditLog {
+  id: string;
+  entity_type: string;
+  entity_id: string;
+  action: string;
+  actor_id: string | null;
+  actor_role: string;
+  payload: Record<string, unknown>;
+  created_at: string;
+}
+
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8080/api/v1";
 
 export default function AdminGovernancePage() {
   const { town } = useTown();
-  const [activeTab, setActiveTab] = useState<"listings" | "opportunities" | "reports">("listings");
+  const [activeTab, setActiveTab] = useState<"listings" | "opportunities" | "reports" | "audit">("listings");
   const [listings, setListings] = useState<AdminListing[]>([]);
   const [opportunities, setOpportunities] = useState<AdminOpportunity[]>([]);
   const [reports, setReports] = useState<AdminReport[]>([]);
+  const [auditLogs, setAuditLogs] = useState<AdminAuditLog[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -51,11 +63,14 @@ export default function AdminGovernancePage() {
   const fetchModerationData = useCallback(async () => {
     setLoading(true);
     try {
-      const [modRes, repRes] = await Promise.all([
+      const [modRes, repRes, auditRes] = await Promise.all([
         fetch(`${API_BASE}/admin/moderation`, {
           headers: { "x-user-id": "22222222-2222-2222-2222-222222222202" },
         }),
         fetch(`${API_BASE}/admin/reports`, {
+          headers: { "x-user-id": "22222222-2222-2222-2222-222222222202" },
+        }),
+        fetch(`${API_BASE}/admin/audit-logs`, {
           headers: { "x-user-id": "22222222-2222-2222-2222-222222222202" },
         }),
       ]);
@@ -69,8 +84,12 @@ export default function AdminGovernancePage() {
         const repData = await repRes.json();
         setReports(repData || []);
       }
+      if (auditRes.ok) {
+        const auditData = await auditRes.json();
+        setAuditLogs(auditData || []);
+      }
     } catch (err) {
-      console.error("Failed to load admin queue data", err);
+      console.error("Failed to load moderation data:", err);
     } finally {
       setLoading(false);
     }
@@ -80,44 +99,78 @@ export default function AdminGovernancePage() {
     fetchModerationData();
   }, [fetchModerationData]);
 
-  const handleModerationAction = async (
-    id: string,
-    entity_type: "listing" | "opportunity",
-    status: "approved" | "rejected" | "needs_changes",
-    verification?: "details_reviewed" | "owner_claimed"
-  ) => {
+  const showNotice = (msg: string) => {
+    setNotice(msg);
+    setTimeout(() => setNotice(null), 3000);
+  };
+
+  const handleModerateListing = async (id: string, status: "approved" | "rejected") => {
     setActionLoading(id);
     try {
-      const res = await fetch(`${API_BASE}/admin/moderation/${id}`, {
-        method: "PATCH",
+      const res = await fetch(`${API_BASE}/admin/moderate/listing/${id}`, {
+        method: "POST",
         headers: {
           "Content-Type": "application/json",
           "x-user-id": "22222222-2222-2222-2222-222222222202",
         },
-        body: JSON.stringify({
-          entity_type,
-          status,
-          verification: verification || "details_reviewed",
-          rejection_reason: status === "rejected" ? "Failed compliance criteria" : null,
-        }),
+        body: JSON.stringify({ status }),
       });
-
       if (res.ok) {
-        setNotice(`Item successfully marked as ${status.toUpperCase()}.`);
-        setTimeout(() => setNotice(null), 4000);
-        await fetchModerationData();
-      } else {
-        setNotice("Failed to update item moderation status.");
+        showNotice(`Listing ${status === "approved" ? "approved" : "rejected"} successfully.`);
+        fetchModerationData();
       }
     } catch (err) {
-      console.error("Moderation action error", err);
-      setNotice("Error connecting to moderation API.");
+      console.error(err);
     } finally {
       setActionLoading(null);
     }
   };
 
-  const handleReportAction = async (id: string, status: "resolved" | "dismissed") => {
+  const handleVerifyListing = async (id: string, status: "details_reviewed" | "not_verified") => {
+    setActionLoading(id);
+    try {
+      const res = await fetch(`${API_BASE}/admin/verify/listing/${id}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-user-id": "22222222-2222-2222-2222-222222222202",
+        },
+        body: JSON.stringify({ verification_status: status }),
+      });
+      if (res.ok) {
+        showNotice(`Listing verification set to ${status}.`);
+        fetchModerationData();
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleModerateOpportunity = async (id: string, status: "approved" | "rejected") => {
+    setActionLoading(id);
+    try {
+      const res = await fetch(`${API_BASE}/admin/moderate/opportunity/${id}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-user-id": "22222222-2222-2222-2222-222222222202",
+        },
+        body: JSON.stringify({ status }),
+      });
+      if (res.ok) {
+        showNotice(`Opportunity ${status === "approved" ? "approved" : "rejected"} successfully.`);
+        fetchModerationData();
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleResolveReport = async (id: string, status: "resolved" | "dismissed") => {
     setActionLoading(id);
     try {
       const res = await fetch(`${API_BASE}/admin/reports/${id}`, {
@@ -128,155 +181,248 @@ export default function AdminGovernancePage() {
         },
         body: JSON.stringify({ status }),
       });
-
       if (res.ok) {
-        setNotice(`Report marked as ${status.toUpperCase()}.`);
-        setTimeout(() => setNotice(null), 4000);
-        await fetchModerationData();
-      } else {
-        setNotice("Failed to update report status.");
+        showNotice(`Report marked as ${status}.`);
+        fetchModerationData();
       }
     } catch (err) {
-      console.error("Report action error", err);
-      setNotice("Error connecting to moderation API.");
+      console.error(err);
     } finally {
       setActionLoading(null);
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#DDE3E8]">
-      {/* Imperial Plum Header */}
-      <section className="border-b border-[#C3CDD6] bg-[#3A0F34] bg-grid-plum py-8 px-4 sm:px-6 shadow-sm">
-        <div className="mx-auto max-w-7xl">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <div>
-              <div className="flex items-center gap-3">
-                <span className="text-xs uppercase tracking-widest font-mono text-[#EAAA00] font-semibold">
-                  Governance & Integrity
-                </span>
-                <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-[#240820] border border-[#B93829] text-[#F8FAFC]">
-                  Admin Session
-                </span>
-              </div>
-              <h1 className="text-2xl font-bold tracking-tight text-[#F8FAFC] mt-1 font-mono uppercase sm:text-3xl">
-                City Moderation Queue
-              </h1>
-              <p className="text-xs text-[#DDE3E8]/80 mt-1 font-sans">
-                Review submitted local listings, student opportunities, and verify authenticity for {town}.
-              </p>
+    <div style={{ backgroundColor: "#F4F2EE", minHeight: "100vh" }}>
+      {/* Header Banner in Obsidian Carbon */}
+      <section
+        style={{
+          backgroundColor: "#111110",
+          color: "#F4F2EE",
+          padding: "36px 24px",
+          borderBottom: "1px solid rgba(244,242,238,0.08)",
+        }}
+      >
+        <div className="mx-auto max-w-7xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2 font-mono" style={{ fontSize: "10px", color: "rgba(244,242,238,0.6)", letterSpacing: "0.08em", textTransform: "uppercase" }}>
+              <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: "#FF4F17" }} />
+              <span>City Governance &amp; Moderation Console</span>
+              <span>/</span>
+              <span style={{ color: "#FF4F17", fontWeight: 700 }}>{town} Jurisdiction</span>
             </div>
-
-            <button
-              onClick={fetchModerationData}
-              disabled={loading}
-              className="flex items-center gap-2 rounded bg-[#EAAA00] hover:bg-[#ffc02e] text-[#240820] px-4 py-2 text-xs font-mono font-bold uppercase transition-all shadow-xs"
+            <h1
+              className="mt-1"
+              style={{
+                fontFamily: "var(--font-serif)",
+                fontSize: "clamp(26px, 3.5vw, 40px)",
+                fontWeight: 400,
+                letterSpacing: "-0.02em",
+                lineHeight: 1.1,
+                color: "#F4F2EE",
+                margin: "4px 0 0",
+              }}
             >
-              <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} strokeWidth={2} />
-              <span>Sync Queue</span>
-            </button>
+              City Admin Governance Queue
+            </h1>
+            <p className="font-mono text-xs mt-1.5" style={{ color: "rgba(244,242,238,0.6)" }}>
+              Authenticated persona: <strong style={{ color: "#F4F2EE" }}>City Administrator</strong> (Supervised Town Verification)
+            </p>
           </div>
+
+          <button
+            onClick={fetchModerationData}
+            className="pressable self-start sm:self-auto flex items-center gap-1.5 px-3.5 py-2 rounded"
+            style={{
+              backgroundColor: "rgba(244,242,238,0.1)",
+              border: "1px solid rgba(244,242,238,0.15)",
+              color: "#F4F2EE",
+              fontFamily: "var(--font-mono)",
+              fontSize: "11px",
+              fontWeight: 600,
+              textTransform: "uppercase",
+              letterSpacing: "0.04em",
+              cursor: "pointer",
+            }}
+          >
+            <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} strokeWidth={2} />
+            <span>Refresh Queue</span>
+          </button>
         </div>
       </section>
 
-      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 space-y-6">
+      {/* Main Content Area */}
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8 space-y-6">
+        {/* Floating Notification */}
         {notice && (
-          <div className="rounded-lg border border-[#0D6E52] bg-[#F8FAFC] p-3 text-xs font-mono text-[#0D6E52] font-semibold shadow-xs">
-            STATUS: {notice}
+          <div
+            className="flex items-center gap-2 px-4 py-3 rounded animate-modal-enter"
+            style={{
+              backgroundColor: "#ECFDF5",
+              border: "1px solid rgba(13,104,71,0.3)",
+              color: "#0D6847",
+              fontFamily: "var(--font-mono)",
+              fontSize: "12px",
+              fontWeight: 600,
+            }}
+          >
+            <Check className="h-4 w-4 shrink-0" strokeWidth={2.5} />
+            <span>{notice}</span>
           </div>
         )}
 
-        {/* Tabs */}
-        <div className="flex flex-wrap gap-2 pb-4 border-b border-[#C3CDD6]">
-          <button
-            onClick={() => setActiveTab("listings")}
-            className={`rounded px-4 py-2 text-xs font-mono font-bold uppercase tracking-wider transition-all shadow-xs ${
-              activeTab === "listings"
-                ? "bg-[#EAAA00] text-[#240820] ring-1 ring-[#240820]"
-                : "bg-[#F8FAFC] text-[#5E4B5B] border border-[#C3CDD6] hover:text-[#1E081B]"
-            }`}
-          >
-            Listings ({listings.length})
-          </button>
-          <button
-            onClick={() => setActiveTab("opportunities")}
-            className={`rounded px-4 py-2 text-xs font-mono font-bold uppercase tracking-wider transition-all shadow-xs ${
-              activeTab === "opportunities"
-                ? "bg-[#EAAA00] text-[#240820] ring-1 ring-[#240820]"
-                : "bg-[#F8FAFC] text-[#5E4B5B] border border-[#C3CDD6] hover:text-[#1E081B]"
-            }`}
-          >
-            Opportunities ({opportunities.length})
-          </button>
-          <button
-            onClick={() => setActiveTab("reports")}
-            className={`rounded px-4 py-2 text-xs font-mono font-bold uppercase tracking-wider transition-all shadow-xs ${
-              activeTab === "reports"
-                ? "bg-[#EAAA00] text-[#240820] ring-1 ring-[#240820]"
-                : "bg-[#F8FAFC] text-[#5E4B5B] border border-[#C3CDD6] hover:text-[#1E081B]"
-            }`}
-          >
-            User Reports ({reports.length})
-          </button>
+        {/* Tab Switcher */}
+        <div
+          className="flex items-center gap-1 p-1 rounded"
+          style={{ backgroundColor: "#FFFFFF", border: "1px solid #D8D3C8" }}
+        >
+          {[
+            { id: "listings" as const, label: `Pending Listings (${listings.length})` },
+            { id: "opportunities" as const, label: `Student Opportunities (${opportunities.length})` },
+            { id: "reports" as const, label: `Citizen Reports (${reports.length})` },
+            { id: "audit" as const, label: `Audit Trail (${auditLogs.length})` },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className="pressable px-4 py-2 rounded font-mono text-xs uppercase"
+              style={{
+                fontWeight: 700,
+                letterSpacing: "0.04em",
+                border: "none",
+                cursor: "pointer",
+                backgroundColor: activeTab === tab.id ? "#111110" : "transparent",
+                color: activeTab === tab.id ? "#F4F2EE" : "#575551",
+                transition: "all 140ms ease-out",
+              }}
+            >
+              {tab.label}
+            </button>
+          ))}
         </div>
 
-        {/* Tab 1: Listings Moderation */}
+        {/* Listings Queue */}
         {activeTab === "listings" && (
-          <div className="space-y-4">
-            {listings.length === 0 ? (
-              <div className="rounded-lg border border-[#C3CDD6] bg-[#F8FAFC] p-12 text-center text-sm font-mono text-[#5E4B5B] uppercase shadow-xs">
-                No listings currently in moderation queue.
+          <div style={{ backgroundColor: "#FFFFFF", border: "1px solid #D8D3C8", borderRadius: "8px", overflow: "hidden" }}>
+            <div
+              className="px-6 py-4 flex items-center justify-between"
+              style={{ borderBottom: "1px solid #D8D3C8", backgroundColor: "#F0EDE8" }}
+            >
+              <h3 className="font-mono text-xs font-bold uppercase tracking-wider" style={{ color: "#111110" }}>
+                Directory Submissions &amp; Verification Requests
+              </h3>
+              <span className="font-mono text-[10px]" style={{ color: "#8B877F" }}>
+                Town: {town}
+              </span>
+            </div>
+
+            {loading ? (
+              <div className="py-12 text-center font-mono text-xs" style={{ color: "#8B877F" }}>
+                Loading moderation items...
+              </div>
+            ) : listings.length === 0 ? (
+              <div className="py-12 text-center font-mono text-xs" style={{ color: "#8B877F" }}>
+                All listings in moderation queue have been processed.
               </div>
             ) : (
-              <div className="rounded-lg border border-[#C3CDD6] bg-[#F8FAFC] divide-y divide-[#C3CDD6] shadow-sm overflow-hidden">
+              <div className="divide-y" style={{ borderColor: "#D8D3C8" }}>
                 {listings.map((item) => (
-                  <div key={item.id} className="p-5 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 hover:bg-[#DDE3E8]/30 transition-colors">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold text-[#3A0F34] text-base font-mono uppercase">{item.name}</span>
-                        <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-[#DDE3E8] border border-[#C3CDD6] text-[#1E081B] font-semibold">
+                  <div
+                    key={item.id}
+                    className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-colors"
+                    style={{ backgroundColor: "#FFFFFF" }}
+                  >
+                    <div className="space-y-1.5 flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-mono text-sm font-bold truncate" style={{ color: "#111110" }}>
+                          {item.name}
+                        </span>
+                        <span
+                          className="font-mono px-2 py-0.5 rounded text-[10px] uppercase font-bold"
+                          style={{ backgroundColor: "#EAE6DF", color: "#575551" }}
+                        >
                           {item.vertical}
                         </span>
-                        <span className="text-[11px] font-mono text-[#5E4B5B]">
-                          {item.city}
+                        <span
+                          className="font-mono px-2 py-0.5 rounded text-[10px] uppercase font-bold"
+                          style={{
+                            backgroundColor: item.verification_status === "details_reviewed" ? "#ECFDF5" : "#FFFBEB",
+                            color: item.verification_status === "details_reviewed" ? "#0D6847" : "#D97706",
+                            border: `1px solid ${item.verification_status === "details_reviewed" ? "rgba(13,104,71,0.2)" : "rgba(217,119,6,0.2)"}`,
+                          }}
+                        >
+                          {item.verification_status.replace("_", " ")}
                         </span>
                       </div>
-                      <div className="flex items-center gap-3 text-xs font-mono text-[#5E4B5B]">
-                        <span>Status: <strong className="text-[#3A0F34] uppercase">{item.moderation_status}</strong></span>
-                        <span>Verification: <strong className="text-[#3A0F34] uppercase">{item.verification_status}</strong></span>
-                        <span>Slug: /{item.slug}</span>
+                      <div className="flex items-center gap-4 font-mono text-xs" style={{ color: "#8B877F" }}>
+                        <span>City: {item.city}</span>
+                        <span>•</span>
+                        <span>Status: <strong style={{ color: "#111110" }}>{item.moderation_status}</strong></span>
+                        <span>•</span>
+                        <span className="font-mono-numbers">{item.created_at.slice(0, 10)}</span>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2">
-                      {item.moderation_status !== "approved" && (
+                    {/* Actions */}
+                    <div className="flex items-center gap-2 shrink-0 flex-wrap">
+                      <button
+                        onClick={() => handleModerateListing(item.id, "approved")}
+                        disabled={actionLoading === item.id}
+                        className="pressable flex items-center gap-1.5 px-3 py-1.5 rounded font-mono text-xs font-bold uppercase"
+                        style={{
+                          backgroundColor: "#0D6847",
+                          color: "#FFFFFF",
+                          border: "none",
+                          cursor: "pointer",
+                        }}
+                      >
+                        <CheckCircle2 className="h-3.5 w-3.5" />
+                        <span>Approve</span>
+                      </button>
+
+                      <button
+                        onClick={() => handleModerateListing(item.id, "rejected")}
+                        disabled={actionLoading === item.id}
+                        className="pressable flex items-center gap-1.5 px-3 py-1.5 rounded font-mono text-xs font-bold uppercase"
+                        style={{
+                          backgroundColor: "transparent",
+                          color: "#FF4F17",
+                          border: "1px solid #FF4F17",
+                          cursor: "pointer",
+                        }}
+                      >
+                        <XCircle className="h-3.5 w-3.5" />
+                        <span>Reject</span>
+                      </button>
+
+                      {item.verification_status !== "details_reviewed" ? (
                         <button
-                          onClick={() => handleModerationAction(item.id, "listing", "approved", "details_reviewed")}
+                          onClick={() => handleVerifyListing(item.id, "details_reviewed")}
                           disabled={actionLoading === item.id}
-                          className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-[#0D6E52] text-white text-xs font-mono font-bold uppercase hover:bg-[#0a5841] transition-colors shadow-xs"
+                          className="pressable flex items-center gap-1.5 px-3 py-1.5 rounded font-mono text-xs font-bold uppercase"
+                          style={{
+                            backgroundColor: "#111110",
+                            color: "#F4F2EE",
+                            border: "none",
+                            cursor: "pointer",
+                          }}
                         >
-                          <CheckCircle2 className="h-3.5 w-3.5 text-white" strokeWidth={2} />
-                          <span>Approve & Review</span>
+                          <ShieldCheck className="h-3.5 w-3.5" />
+                          <span>Assign Verified Badge</span>
                         </button>
-                      )}
-                      {item.moderation_status !== "rejected" && (
+                      ) : (
                         <button
-                          onClick={() => handleModerationAction(item.id, "listing", "rejected")}
+                          onClick={() => handleVerifyListing(item.id, "not_verified")}
                           disabled={actionLoading === item.id}
-                          className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-[#B93829] text-white text-xs font-mono font-bold uppercase hover:bg-[#962c20] transition-colors shadow-xs"
+                          className="pressable flex items-center gap-1.5 px-3 py-1.5 rounded font-mono text-xs font-bold uppercase"
+                          style={{
+                            backgroundColor: "#EAE6DF",
+                            color: "#575551",
+                            border: "1px solid #D8D3C8",
+                            cursor: "pointer",
+                          }}
                         >
-                          <XCircle className="h-3.5 w-3.5 text-white" strokeWidth={2} />
-                          <span>Reject</span>
-                        </button>
-                      )}
-                      {item.verification_status !== "details_reviewed" && (
-                        <button
-                          onClick={() => handleModerationAction(item.id, "listing", "approved", "details_reviewed")}
-                          disabled={actionLoading === item.id}
-                          className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-[#3A0F34] text-[#F8FAFC] text-xs font-mono font-bold uppercase hover:bg-[#240820] transition-colors shadow-xs"
-                        >
-                          <ShieldCheck className="h-3.5 w-3.5 text-[#EAAA00]" strokeWidth={2} />
-                          <span>Grant Verified</span>
+                          <span>Revoke Verified</span>
                         </button>
                       )}
                     </div>
@@ -287,50 +433,88 @@ export default function AdminGovernancePage() {
           </div>
         )}
 
-        {/* Tab 2: Student Opportunities Moderation */}
+        {/* Opportunities Queue */}
         {activeTab === "opportunities" && (
-          <div className="space-y-4">
-            {opportunities.length === 0 ? (
-              <div className="rounded-lg border border-[#C3CDD6] bg-[#F8FAFC] p-12 text-center text-sm font-mono text-[#5E4B5B] uppercase shadow-xs">
-                No student opportunities in queue.
+          <div style={{ backgroundColor: "#FFFFFF", border: "1px solid #D8D3C8", borderRadius: "8px", overflow: "hidden" }}>
+            <div
+              className="px-6 py-4 flex items-center justify-between"
+              style={{ borderBottom: "1px solid #D8D3C8", backgroundColor: "#F0EDE8" }}
+            >
+              <h3 className="font-mono text-xs font-bold uppercase tracking-wider" style={{ color: "#111110" }}>
+                Student Opportunities &amp; Offer Submissions
+              </h3>
+              <span className="font-mono text-[10px]" style={{ color: "#8B877F" }}>
+                Anti-Scam Verified
+              </span>
+            </div>
+
+            {loading ? (
+              <div className="py-12 text-center font-mono text-xs" style={{ color: "#8B877F" }}>
+                Loading opportunities...
+              </div>
+            ) : opportunities.length === 0 ? (
+              <div className="py-12 text-center font-mono text-xs" style={{ color: "#8B877F" }}>
+                No opportunities pending moderation review.
               </div>
             ) : (
-              <div className="rounded-lg border border-[#C3CDD6] bg-[#F8FAFC] divide-y divide-[#C3CDD6] shadow-sm overflow-hidden">
-                {opportunities.map((opp) => (
-                  <div key={opp.id} className="p-5 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 hover:bg-[#DDE3E8]/30 transition-colors">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold text-[#3A0F34] text-base font-mono uppercase">{opp.title}</span>
-                        <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-[#DDE3E8] border border-[#C3CDD6] text-[#1E081B] font-semibold">
-                          {opp.opportunity_type}
+              <div className="divide-y" style={{ borderColor: "#D8D3C8" }}>
+                {opportunities.map((item) => (
+                  <div
+                    key={item.id}
+                    className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                    style={{ backgroundColor: "#FFFFFF" }}
+                  >
+                    <div className="space-y-1.5 flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-mono text-sm font-bold truncate" style={{ color: "#111110" }}>
+                          {item.title}
+                        </span>
+                        <span
+                          className="font-mono px-2 py-0.5 rounded text-[10px] uppercase font-bold"
+                          style={{ backgroundColor: "#FFFBEB", color: "#D97706", border: "1px solid rgba(217,119,6,0.25)" }}
+                        >
+                          {item.opportunity_type.replace("_", " ")}
                         </span>
                       </div>
-                      <div className="text-xs font-mono text-[#5E4B5B]">
-                        Provider: <strong className="text-[#1E081B]">{opp.provider_name}</strong> | City: {opp.city} | Status: <strong className="text-[#3A0F34] uppercase">{opp.moderation_status}</strong>
+                      <div className="flex items-center gap-4 font-mono text-xs" style={{ color: "#8B877F" }}>
+                        <span>Provider: <strong style={{ color: "#111110" }}>{item.provider_name}</strong></span>
+                        <span>•</span>
+                        <span>City: {item.city}</span>
+                        <span>•</span>
+                        <span>Status: <strong style={{ color: "#111110" }}>{item.moderation_status}</strong></span>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2">
-                      {opp.moderation_status !== "approved" && (
-                        <button
-                          onClick={() => handleModerationAction(opp.id, "opportunity", "approved")}
-                          disabled={actionLoading === opp.id}
-                          className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-[#0D6E52] text-white text-xs font-mono font-bold uppercase hover:bg-[#0a5841] transition-colors shadow-xs"
-                        >
-                          <CheckCircle2 className="h-3.5 w-3.5 text-white" strokeWidth={2} />
-                          <span>Approve Opportunity</span>
-                        </button>
-                      )}
-                      {opp.moderation_status !== "rejected" && (
-                        <button
-                          onClick={() => handleModerationAction(opp.id, "opportunity", "rejected")}
-                          disabled={actionLoading === opp.id}
-                          className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-[#B93829] text-white text-xs font-mono font-bold uppercase hover:bg-[#962c20] transition-colors shadow-xs"
-                        >
-                          <XCircle className="h-3.5 w-3.5 text-white" strokeWidth={2} />
-                          <span>Reject</span>
-                        </button>
-                      )}
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button
+                        onClick={() => handleModerateOpportunity(item.id, "approved")}
+                        disabled={actionLoading === item.id}
+                        className="pressable flex items-center gap-1.5 px-3 py-1.5 rounded font-mono text-xs font-bold uppercase"
+                        style={{
+                          backgroundColor: "#0D6847",
+                          color: "#FFFFFF",
+                          border: "none",
+                          cursor: "pointer",
+                        }}
+                      >
+                        <CheckCircle2 className="h-3.5 w-3.5" />
+                        <span>Approve</span>
+                      </button>
+
+                      <button
+                        onClick={() => handleModerateOpportunity(item.id, "rejected")}
+                        disabled={actionLoading === item.id}
+                        className="pressable flex items-center gap-1.5 px-3 py-1.5 rounded font-mono text-xs font-bold uppercase"
+                        style={{
+                          backgroundColor: "transparent",
+                          color: "#FF4F17",
+                          border: "1px solid #FF4F17",
+                          cursor: "pointer",
+                        }}
+                      >
+                        <XCircle className="h-3.5 w-3.5" />
+                        <span>Reject</span>
+                      </button>
                     </div>
                   </div>
                 ))}
@@ -339,59 +523,179 @@ export default function AdminGovernancePage() {
           </div>
         )}
 
-        {/* Tab 3: User Governance Reports */}
+        {/* Reports Queue */}
         {activeTab === "reports" && (
-          <div className="space-y-4">
-            {reports.length === 0 ? (
-              <div className="rounded-lg border border-[#C3CDD6] bg-[#F8FAFC] p-12 text-center text-sm font-mono text-[#5E4B5B] uppercase shadow-xs">
-                Zero active user reports. Community records are clean.
+          <div style={{ backgroundColor: "#FFFFFF", border: "1px solid #D8D3C8", borderRadius: "8px", overflow: "hidden" }}>
+            <div
+              className="px-6 py-4 flex items-center justify-between"
+              style={{ borderBottom: "1px solid #D8D3C8", backgroundColor: "#F0EDE8" }}
+            >
+              <h3 className="font-mono text-xs font-bold uppercase tracking-wider" style={{ color: "#111110" }}>
+                Citizen Issue Reports &amp; Inaccuracy Flagging
+              </h3>
+              <span className="font-mono text-[10px]" style={{ color: "#8B877F" }}>
+                Consumer Protection
+              </span>
+            </div>
+
+            {loading ? (
+              <div className="py-12 text-center font-mono text-xs" style={{ color: "#8B877F" }}>
+                Loading citizen reports...
+              </div>
+            ) : reports.length === 0 ? (
+              <div className="py-12 text-center font-mono text-xs" style={{ color: "#8B877F" }}>
+                No citizen reports registered.
               </div>
             ) : (
-              <div className="rounded-lg border border-[#C3CDD6] bg-[#F8FAFC] divide-y divide-[#C3CDD6] shadow-sm overflow-hidden">
-                {reports.map((rep) => (
-                  <div key={rep.id} className="p-5 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 hover:bg-[#DDE3E8]/30 transition-colors">
-                    <div className="space-y-1.5 max-w-xl">
+              <div className="divide-y" style={{ borderColor: "#D8D3C8" }}>
+                {reports.map((item) => (
+                  <div
+                    key={item.id}
+                    className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                    style={{ backgroundColor: "#FFFFFF" }}
+                  >
+                    <div className="space-y-1.5 flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <AlertTriangle className="h-4 w-4 text-[#B93829]" strokeWidth={2} />
-                        <span className="font-mono text-xs uppercase px-2 py-0.5 rounded bg-[#B93829]/10 border border-[#B93829] text-[#B93829] font-bold">
-                          {rep.reason.replace("_", " ")}
+                        <span
+                          className="font-mono px-2 py-0.5 rounded text-[10px] uppercase font-bold"
+                          style={{ backgroundColor: "rgba(255,79,23,0.1)", color: "#FF4F17", border: "1px solid rgba(255,79,23,0.2)" }}
+                        >
+                          {item.reason.replace("_", " ")}
                         </span>
-                        <span className="text-[11px] font-mono text-[#5E4B5B]">
-                          Reported by: <strong className="text-[#1E081B]">{rep.reported_by_email}</strong>
-                        </span>
-                        <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-[#DDE3E8] text-[#1E081B] font-semibold">
-                          Status: {rep.status}
+                        <span
+                          className="font-mono px-2 py-0.5 rounded text-[10px] uppercase font-bold"
+                          style={{
+                            backgroundColor: item.status === "open" ? "#FFFBEB" : "#ECFDF5",
+                            color: item.status === "open" ? "#D97706" : "#0D6847",
+                          }}
+                        >
+                          {item.status}
                         </span>
                       </div>
-                      <p className="text-sm text-[#1E081B] font-sans">
-                        &quot;{rep.details}&quot;
+                      <p className="font-sans text-xs" style={{ color: "#111110" }}>
+                        {item.details}
                       </p>
-                      <div className="text-[10px] font-mono text-[#5E4B5B]">
-                        Listing ID: {rep.listing_id} | Created: {new Date(rep.created_at).toLocaleString()}
+                      <div className="flex items-center gap-4 font-mono text-xs" style={{ color: "#8B877F" }}>
+                        <span>Reported by: {item.reported_by_email || "Anonymous"}</span>
+                        <span>•</span>
+                        <span className="font-mono-numbers">{item.created_at.slice(0, 10)}</span>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2">
-                      {rep.status === "open" && (
-                        <>
-                          <button
-                            onClick={() => handleReportAction(rep.id, "resolved")}
-                            disabled={actionLoading === rep.id}
-                            className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-[#0D6E52] text-white text-xs font-mono font-bold uppercase hover:bg-[#0a5841] transition-colors shadow-xs"
-                          >
-                            <CheckCircle2 className="h-3.5 w-3.5 text-white" strokeWidth={2} />
-                            <span>Resolve Issue</span>
-                          </button>
-                          <button
-                            onClick={() => handleReportAction(rep.id, "dismissed")}
-                            disabled={actionLoading === rep.id}
-                            className="flex items-center gap-1.5 px-3 py-1.5 rounded border border-[#C3CDD6] bg-[#DDE3E8] text-[#5E4B5B] hover:text-[#1E081B] text-xs font-mono font-bold uppercase transition-colors"
-                          >
-                            <XCircle className="h-3.5 w-3.5 text-[#5E4B5B]" strokeWidth={2} />
-                            <span>Dismiss</span>
-                          </button>
-                        </>
-                      )}
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button
+                        onClick={() => handleResolveReport(item.id, "resolved")}
+                        disabled={actionLoading === item.id}
+                        className="pressable flex items-center gap-1.5 px-3 py-1.5 rounded font-mono text-xs font-bold uppercase"
+                        style={{
+                          backgroundColor: "#0D6847",
+                          color: "#FFFFFF",
+                          border: "none",
+                          cursor: "pointer",
+                        }}
+                      >
+                        <CheckCircle2 className="h-3.5 w-3.5" />
+                        <span>Resolve</span>
+                      </button>
+
+                      <button
+                        onClick={() => handleResolveReport(item.id, "dismissed")}
+                        disabled={actionLoading === item.id}
+                        className="pressable flex items-center gap-1.5 px-3 py-1.5 rounded font-mono text-xs font-bold uppercase"
+                        style={{
+                          backgroundColor: "transparent",
+                          color: "#575551",
+                          border: "1px solid #D8D3C8",
+                          cursor: "pointer",
+                        }}
+                      >
+                        <span>Dismiss</span>
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Governance Audit Trail */}
+        {activeTab === "audit" && (
+          <div style={{ backgroundColor: "#FFFFFF", border: "1px solid #D8D3C8", borderRadius: "8px", overflow: "hidden" }}>
+            <div
+              className="px-6 py-4 flex items-center justify-between"
+              style={{ borderBottom: "1px solid #D8D3C8", backgroundColor: "#F0EDE8" }}
+            >
+              <div>
+                <h3 className="font-mono text-xs font-bold uppercase tracking-wider" style={{ color: "#111110" }}>
+                  Immutable Governance Audit Trail
+                </h3>
+                <p className="font-mono text-[11px] text-[#575551] mt-0.5">
+                  Async background worker event stream: enquiries, lead updates, and moderation actions
+                </p>
+              </div>
+              <span className="font-mono text-[10px] text-[#8B877F] uppercase">
+                Worker Capacity: 100 Jobs
+              </span>
+            </div>
+
+            {loading ? (
+              <div className="py-12 text-center font-mono text-xs" style={{ color: "#8B877F" }}>
+                Loading audit trail events...
+              </div>
+            ) : auditLogs.length === 0 ? (
+              <div className="py-12 text-center font-mono text-xs" style={{ color: "#8B877F" }}>
+                No audit events recorded yet. Enqueue enquiries or moderation actions to view entries.
+              </div>
+            ) : (
+              <div className="divide-y" style={{ borderColor: "#D8D3C8" }}>
+                {auditLogs.map((log) => (
+                  <div
+                    key={log.id}
+                    className="p-5 flex flex-col sm:flex-row sm:items-start justify-between gap-4 hover:bg-[#F4F2EE]/40 transition-colors"
+                  >
+                    <div className="space-y-2 flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span
+                          className="font-mono px-2 py-0.5 rounded text-[10px] uppercase font-bold"
+                          style={{ backgroundColor: "#111110", color: "#F4F2EE" }}
+                        >
+                          {log.entity_type}
+                        </span>
+                        <span
+                          className="font-mono px-2 py-0.5 rounded text-[10px] uppercase font-bold"
+                          style={{
+                            backgroundColor: log.action.includes("approved") || log.action.includes("created")
+                              ? "#ECFDF5"
+                              : "#FFFBEB",
+                            color: log.action.includes("approved") || log.action.includes("created")
+                              ? "#0D6847"
+                              : "#D97706",
+                            border: "1px solid rgba(0,0,0,0.06)",
+                          }}
+                        >
+                          {log.action}
+                        </span>
+                        <span className="font-mono text-[11px] text-[#575551]">
+                          Actor: <strong>{log.actor_role}</strong>
+                          {log.actor_id ? ` (${log.actor_id.slice(0, 8)})` : " (System / Resident)"}
+                        </span>
+                      </div>
+
+                      <div className="rounded bg-[#F4F2EE] border border-[#D8D3C8] p-2.5 font-mono text-[11px] text-[#111110] overflow-x-auto">
+                        <pre className="whitespace-pre-wrap">{JSON.stringify(log.payload, null, 2)}</pre>
+                      </div>
+
+                      <div className="flex items-center gap-4 font-mono text-[10px] text-[#8B877F]">
+                        <span>Entity ID: {log.entity_id}</span>
+                        <span>•</span>
+                        <span>Log ID: {log.id}</span>
+                      </div>
+                    </div>
+
+                    <div className="font-mono text-xs text-[#575551] shrink-0 text-right">
+                      <p className="font-bold text-[#111110]">{new Date(log.created_at).toLocaleTimeString()}</p>
+                      <p className="text-[10px] text-[#8B877F]">{new Date(log.created_at).toLocaleDateString()}</p>
                     </div>
                   </div>
                 ))}

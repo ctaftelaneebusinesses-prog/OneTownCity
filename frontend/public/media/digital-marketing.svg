@@ -1,0 +1,63 @@
+<svg width="800" height="450" viewBox="0 0 800 450" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="dig-sky" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#161719"/>
+      <stop offset="50%" stop-color="#101113"/>
+      <stop offset="100%" stop-color="#0A0B0C"/>
+    </linearGradient>
+    <pattern id="dig-grid" width="30" height="30" patternUnits="userSpaceOnUse">
+      <path d="M 30 0 L 0 0 0 30" fill="none" stroke="rgba(255,79,23,0.06)" stroke-width="0.8"/>
+    </pattern>
+  </defs>
+
+  <rect width="800" height="450" fill="url(#dig-sky)"/>
+  <rect width="800" height="450" fill="url(#dig-grid)"/>
+
+  <line x1="50" y1="50" x2="750" y2="50" stroke="rgba(216,211,200,0.15)" stroke-width="1" stroke-dasharray="2 4"/>
+  <line x1="50" y1="400" x2="750" y2="400" stroke="rgba(216,211,200,0.2)" stroke-width="1"/>
+
+  <!-- Tech Lab Terminal Layout -->
+  <rect x="120" y="120" width="560" height="280" fill="#151719" stroke="rgba(216,211,200,0.2)" stroke-width="1.2"/>
+
+  <!-- Network Circuit Lines and Nodes -->
+  <g stroke="#FF4F17" stroke-width="1.2" fill="none">
+    <path d="M 160 200 L 260 200 L 300 240 L 420 240 L 460 180 L 580 180"/>
+    <path d="M 160 280 L 240 280 L 280 320 L 520 320 L 560 260 L 640 260"/>
+    <circle cx="260" cy="200" r="4" fill="#FF4F17"/>
+    <circle cx="300" cy="240" r="4" fill="#FF4F17"/>
+    <circle cx="460" cy="180" r="4" fill="#FF4F17"/>
+    <circle cx="580" cy="180" r="4" fill="#FF4F17"/>
+    <circle cx="280" cy="320" r="4" fill="#FF4F17"/>
+    <circle cx="560" cy="260" r="4" fill="#FF4F17"/>
+  </g>
+
+  <!-- Server Rack Column Panels -->
+  <g fill="#1D2024" stroke="rgba(216,211,200,0.3)" stroke-width="1">
+    <rect x="200" y="160" width="80" height="200"/>
+    <line x1="210" y1="180" x2="270" y2="180" stroke="#FF4F17" stroke-width="1.5"/>
+    <line x1="210" y1="210" x2="270" y2="210" stroke="rgba(216,211,200,0.3)"/>
+    <line x1="210" y1="240" x2="270" y2="240" stroke="rgba(216,211,200,0.3)"/>
+    <line x1="210" y1="270" x2="270" y2="270" stroke="rgba(216,211,200,0.3)"/>
+    <line x1="210" y1="300" x2="270" y2="300" stroke="#0D6847" stroke-width="1.5"/>
+
+    <rect x="520" y="160" width="80" height="200"/>
+    <line x1="530" y1="180" x2="590" y2="180" stroke="#FF4F17" stroke-width="1.5"/>
+    <line x1="530" y1="210" x2="590" y2="210" stroke="rgba(216,211,200,0.3)"/>
+    <line x1="530" y1="240" x2="590" y2="240" stroke="rgba(216,211,200,0.3)"/>
+    <line x1="530" y1="270" x2="590" y2="270" stroke="rgba(216,211,200,0.3)"/>
+    <line x1="530" y1="300" x2="590" y2="300" stroke="#0D6847" stroke-width="1.5"/>
+  </g>
+
+  <!-- Central Display Terminal -->
+  <rect x="330" y="180" width="140" height="90" fill="#0C0D0E" stroke="#FF4F17" stroke-width="1.5"/>
+  <text x="400" y="215" fill="#FF4F17" font-family="monospace" font-size="10" font-weight="700" text-anchor="middle" letter-spacing="2">DATA ROUTER</text>
+  <text x="400" y="235" fill="#8B877F" font-family="monospace" font-size="8" text-anchor="middle">10 GBPS OPTICAL BACKBONE</text>
+
+  <!-- Metadata -->
+  <g font-family="monospace" font-size="9" fill="rgba(244,242,238,0.7)" letter-spacing="1.5">
+    <text x="60" y="75">TECH 06 // DIGITAL MEDIA, CLOUD WORKSTATIONS &amp; CYBER LAB</text>
+    <text x="60" y="95" font-size="8" fill="#8B877F">HIGH-SPEED FIBER · SOFTWARE TESTING · RECRUITMENT DRIVES</text>
+    <text x="740" y="75" text-anchor="end" fill="#0D6847" font-weight="700">VERIFIED NETWORK</text>
+    <text x="740" y="95" text-anchor="end" font-size="8" fill="#8B877F">FIBER POINT OF PRESENCE</text>
+  </g>
+</svg>

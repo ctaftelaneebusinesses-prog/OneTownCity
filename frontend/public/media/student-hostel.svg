@@ -1,0 +1,59 @@
+<svg width="800" height="450" viewBox="0 0 800 450" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="host-sky" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#181816"/>
+      <stop offset="60%" stop-color="#121210"/>
+      <stop offset="100%" stop-color="#0B0B09"/>
+    </linearGradient>
+    <pattern id="host-grid" width="30" height="30" patternUnits="userSpaceOnUse">
+      <path d="M 30 0 L 0 0 0 30" fill="none" stroke="rgba(216,211,200,0.06)" stroke-width="0.8"/>
+    </pattern>
+  </defs>
+
+  <rect width="800" height="450" fill="url(#host-sky)"/>
+  <rect width="800" height="450" fill="url(#host-grid)"/>
+
+  <line x1="50" y1="50" x2="750" y2="50" stroke="rgba(216,211,200,0.15)" stroke-width="1" stroke-dasharray="2 4"/>
+  <line x1="50" y1="400" x2="750" y2="400" stroke="rgba(216,211,200,0.2)" stroke-width="1"/>
+
+  <!-- Hostel Residence Block -->
+  <rect x="130" y="120" width="540" height="280" fill="#1C1B19" stroke="rgba(216,211,200,0.2)" stroke-width="1.2"/>
+
+  <!-- Balcony Room Modular Grid (3 Floors x 4 Rooms) -->
+  <g fill="#141312" stroke="rgba(216,211,200,0.25)" stroke-width="1">
+    <!-- Level 3 -->
+    <rect x="160" y="150" width="90" height="55"/>
+    <rect x="280" y="150" width="90" height="55"/>
+    <rect x="430" y="150" width="90" height="55"/>
+    <rect x="550" y="150" width="90" height="55"/>
+    <line x1="160" y1="190" x2="250" y2="190" stroke="#FF4F17" stroke-width="1.5"/>
+    <line x1="280" y1="190" x2="370" y2="190" stroke="#FF4F17" stroke-width="1.5"/>
+    <line x1="430" y1="190" x2="520" y2="190" stroke="#FF4F17" stroke-width="1.5"/>
+    <line x1="550" y1="190" x2="640" y2="190" stroke="#FF4F17" stroke-width="1.5"/>
+
+    <!-- Level 2 -->
+    <rect x="160" y="230" width="90" height="55"/>
+    <rect x="280" y="230" width="90" height="55"/>
+    <rect x="430" y="230" width="90" height="55"/>
+    <rect x="550" y="230" width="90" height="55"/>
+
+    <!-- Level 1 -->
+    <rect x="160" y="310" width="90" height="55"/>
+    <rect x="280" y="310" width="90" height="55"/>
+    <rect x="430" y="310" width="90" height="55"/>
+    <rect x="550" y="310" width="90" height="55"/>
+  </g>
+
+  <!-- Security Portal & Bio-Metric Gate -->
+  <rect x="360" y="310" width="80" height="90" fill="#242220" stroke="#0D6847" stroke-width="1.5"/>
+  <circle cx="400" cy="335" r="8" fill="none" stroke="#0D6847" stroke-width="1.2"/>
+  <text x="400" y="365" fill="#0D6847" font-family="monospace" font-size="7" font-weight="700" text-anchor="middle">BIOMETRIC ENTRY</text>
+
+  <!-- Metadata -->
+  <g font-family="monospace" font-size="9" fill="rgba(244,242,238,0.7)" letter-spacing="1.5">
+    <text x="60" y="75">STUDENTS 11 // VERIFIED RESIDENTIAL HOSTEL &amp; MESS</text>
+    <text x="60" y="95" font-size="8" fill="#8B877F">ATTACHED BATH · STUDY DESKS · SOLAR WATER · 3-MEAL MESS</text>
+    <text x="740" y="75" text-anchor="end" fill="#0D6847" font-weight="700">DETAILS REVIEWED</text>
+    <text x="740" y="95" text-anchor="end" font-size="8" fill="#8B877F">CCTV SURVEILLANCE</text>
+  </g>
+</svg>

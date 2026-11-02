@@ -2,21 +2,38 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import {
-  Users,
   Eye,
   MessageSquare,
   Phone,
   BarChart3,
   CheckCircle2,
   PlusCircle,
-  Sparkles,
-  ArrowUpRight,
   TrendingUp,
-  Sliders,
+  ArrowUpRight,
   Check,
+  X,
+  Send,
+  ShieldCheck,
+  AlertTriangle,
 } from "lucide-react";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8080/api/v1";
+
+// Swiss Civic Editorial design tokens
+const T = {
+  canvas:    "#F4F2EE",
+  surface:   "#FFFFFF",
+  muted:     "#EAE6DF",
+  inkPrim:   "#111110",
+  inkSec:    "#575551",
+  inkTert:   "#8B877F",
+  border:    "#D8D3C8",
+  accent:    "#FF4F17",
+  verified:  "#0D6847",
+  sponsored: "#D97706",
+  rail:      "#111110",
+  railText:  "#F4F2EE",
+};
 
 type TenantMetrics = {
   organization_name: string;
@@ -52,7 +69,10 @@ export default function TenantDashboard() {
   const [activeLeadFilter, setActiveLeadFilter] = useState<"all" | "open" | "responded">("all");
   const [isLoading, setIsLoading] = useState(true);
 
-  // Form state to publish student opportunity
+  // Slide-over modal state
+  const [isSlideOverOpen, setIsSlideOverOpen] = useState(false);
+
+  // Form state to publish student opportunity / offer
   const [oppTitle, setOppTitle] = useState("");
   const [oppType, setOppType] = useState<string>("internship");
   const [oppDesc, setOppDesc] = useState("");
@@ -149,7 +169,10 @@ export default function TenantDashboard() {
         setOppDesc("");
         setOppEligibility("");
         setOppStipend("");
-        setTimeout(() => setOppSuccess(""), 4000);
+        setTimeout(() => {
+          setOppSuccess("");
+          setIsSlideOverOpen(false);
+        }, 2200);
       }
     } catch (e) {
       console.error("Error publishing opportunity:", e);
@@ -188,182 +211,446 @@ export default function TenantDashboard() {
 
   const orgName = metrics?.organization_name || "Narayana Engineering College";
 
+  const quotaPct = Math.min(
+    100,
+    ((metrics?.leads_used_this_month || 0) / (metrics?.monthly_lead_quota || 1)) * 100
+  );
+
+  // Input style reused across form fields
+  const inputCls: React.CSSProperties = {
+    width: "100%",
+    border: `1px solid ${T.border}`,
+    background: T.surface,
+    borderRadius: 4,
+    padding: "7px 10px",
+    fontFamily: "'JetBrains Mono', monospace",
+    fontSize: 12,
+    color: T.inkPrim,
+    outline: "none",
+  };
+
   return (
-    <div className="min-h-screen bg-[#DDE3E8]">
-      {/* Top Banner with Executive Persona Switcher */}
-      <section className="border-b border-[#C3CDD6] bg-[#3A0F34] hero-radial-plum py-6 px-4 sm:px-6 lg:px-8 text-white shadow-md">
-        <div className="mx-auto max-w-7xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div style={{ minHeight: "100vh", background: T.canvas, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+
+      {/* ── Top Banner ─────────────────────────────────────────── */}
+      <header style={{ background: T.rail, borderBottom: `1px solid ${T.border}`, padding: "14px 32px" }}>
+        <div style={{ maxWidth: 1280, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
+
+          {/* Left: wordmark + org */}
           <div>
-            <div className="inline-flex items-center gap-2 font-mono text-[11px] text-[#EAAA00] uppercase tracking-widest font-bold">
-              <span className="h-2 w-2 rounded-full bg-[#EAAA00] animate-pulse" />
-              <span>Multi-Tenant SaaS Portal</span>
-              <span className="text-white/40">/</span>
-              <span className="text-white font-normal">{metrics?.city || "Nellore"}</span>
+            <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: T.inkTert, textTransform: "uppercase", letterSpacing: "0.14em", marginBottom: 4 }}>
+              SAAS STUDIO / {metrics?.city || "Nellore"}
             </div>
-            {/* Header Title (Must match orgName for E2E tests) */}
-            <h1 className="text-2xl sm:text-3xl font-extrabold uppercase font-mono tracking-tight text-white mt-1">
+            <h1 style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 20, fontWeight: 700, color: T.railText, textTransform: "uppercase", letterSpacing: "0.04em", margin: 0 }}>
               {orgName}
             </h1>
-            <div className="mt-1 flex items-center gap-2 font-mono text-xs text-[#DDE3E8]/80">
-              <span>SaaS Plan:</span>
-              <span className="rounded bg-[#240820] border border-[#EAAA00]/40 px-2 py-0.5 text-[#EAAA00] font-bold uppercase">
+          </div>
+
+          {/* Right: persona switcher + CTA */}
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            {/* Persona pill toggle */}
+            <div style={{ display: "flex", border: `1px solid #333330`, borderRadius: 6, overflow: "hidden" }}>
+              {(["education", "business"] as const).map((p) => (
+                <button
+                  key={p}
+                  onClick={() => setTenantPersona(p)}
+                  style={{
+                    fontFamily: "'JetBrains Mono', monospace",
+                    fontSize: 11,
+                    fontWeight: 700,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.08em",
+                    padding: "6px 14px",
+                    background: tenantPersona === p ? T.accent : "transparent",
+                    color: tenantPersona === p ? "#FFFFFF" : T.inkTert,
+                    border: "none",
+                    cursor: "pointer",
+                    transition: "background 0.15s",
+                  }}
+                >
+                  {p === "education" ? "Education Tenant" : "Business Tenant"}
+                </button>
+              ))}
+            </div>
+
+            {/* Post Opportunity CTA */}
+            <button
+              onClick={() => setIsSlideOverOpen(true)}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+                background: T.accent,
+                color: "#FFFFFF",
+                fontFamily: "'JetBrains Mono', monospace",
+                fontSize: 11,
+                fontWeight: 700,
+                textTransform: "uppercase",
+                letterSpacing: "0.08em",
+                border: "none",
+                borderRadius: 4,
+                padding: "8px 16px",
+                cursor: "pointer",
+              }}
+            >
+              <PlusCircle size={14} strokeWidth={2.2} />
+              Post Opportunity
+            </button>
+          </div>
+        </div>
+      </header>
+
+      {/* ── Body: Rail + Main ──────────────────────────────────── */}
+      <div style={{ maxWidth: 1280, margin: "0 auto", display: "grid", gridTemplateColumns: "300px 1fr", gap: 0, minHeight: "calc(100vh - 61px)" }}>
+
+        {/* ── LEFT RAIL ─────────────────────────────────────────── */}
+        <aside style={{ background: T.rail, borderRight: `1px solid #222220`, padding: "28px 20px", display: "flex", flexDirection: "column", gap: 28 }}>
+
+          {/* Section label */}
+          <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.18em", color: T.inkTert }}>
+            SAAS STUDIO
+          </div>
+
+          {/* Anti-scam notice embedded in rail */}
+          <div style={{ border: `1px solid #2E2E2C`, borderRadius: 4, padding: "10px 12px", background: "#1A1A18" }}>
+            <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
+              <AlertTriangle size={13} color={T.accent} style={{ marginTop: 1, flexShrink: 0 }} />
+              <p style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: "#8B877F", lineHeight: 1.6, margin: 0 }}>
+                ANTI-SCAM: Never pay money to apply for any internship or job. All listings on OneTownCity are free to apply.
+              </p>
+            </div>
+          </div>
+
+          {/* Monthly Lead Quota */}
+          <div>
+            <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", color: T.inkTert, marginBottom: 12 }}>
+              Monthly Lead Quota
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 8 }}>
+              <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 24, fontWeight: 700, color: T.railText }}>
+                {metrics?.leads_used_this_month || 0}
+              </span>
+              <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 12, color: T.inkTert }}>
+                / {metrics?.monthly_lead_quota || 5}
+              </span>
+            </div>
+            {/* Progress bar */}
+            <div style={{ height: 4, background: "#2A2A28", borderRadius: 2, overflow: "hidden" }}>
+              <div style={{ height: "100%", width: `${quotaPct}%`, background: T.accent, borderRadius: 2, transition: "width 0.3s" }} />
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6 }}>
+              <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: T.inkTert }}>
                 {metrics?.plan_name || "Education Pro"}
+              </span>
+              <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: T.inkTert }}>
+                Resets 1st
               </span>
             </div>
           </div>
 
-          {/* Test Persona Switcher */}
-          <div className="flex items-center gap-2 rounded-2xl border border-white/20 bg-[#240820] p-1.5 self-start sm:self-auto shadow-lg backdrop-blur-xs">
-            <span className="font-mono text-[10px] text-white/70 uppercase px-2 font-semibold">
-              Test Persona:
-            </span>
-            <button
-              onClick={() => setTenantPersona("education")}
-              className={`rounded-xl px-3.5 py-1.5 font-mono text-xs uppercase font-bold transition-all ${
-                tenantPersona === "education"
-                  ? "bg-[#EAAA00] text-[#240820] shadow-sm"
-                  : "text-white/80 hover:bg-white/10"
-              }`}
-            >
-              Education Tenant
-            </button>
-            <button
-              onClick={() => setTenantPersona("business")}
-              className={`rounded-xl px-3.5 py-1.5 font-mono text-xs uppercase font-bold transition-all ${
-                tenantPersona === "business"
-                  ? "bg-[#EAAA00] text-[#240820] shadow-sm"
-                  : "text-white/80 hover:bg-white/10"
-              }`}
-            >
-              Business Tenant
-            </button>
-          </div>
-        </div>
-      </section>
+          {/* Divider */}
+          <div style={{ height: 1, background: "#222220" }} />
 
-      {/* Main Container with Deep Left Rail & Content */}
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          {/* Deep Left Navigation Rail / Plan Card (4 cols) */}
-          <div className="lg:col-span-4 space-y-6">
-            {/* Monthly Lead Quota Card (Must match "lead quota" and "education pro" for tests) */}
-            <div className="rounded-2xl bg-[#3A0F34] text-white p-6 shadow-xl space-y-5 border border-white/10">
-              <div className="flex items-center justify-between border-b border-white/15 pb-4">
-                <div className="flex items-center gap-2">
-                  <BarChart3 className="h-5 w-5 text-[#EAAA00]" strokeWidth={2} />
-                  <span className="font-mono text-xs font-bold uppercase tracking-wider text-white">
-                    Monthly Lead Quota Meter
+          {/* Plan Tier Simulator */}
+          <div>
+            <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", color: T.inkTert, marginBottom: 12 }}>
+              Plan Tier Simulator
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
+              {[
+                { label: "Free (5)", tier: "free" },
+                { label: "Growth Business (25)", tier: "growth_business" },
+                { label: "Edu Pro (50)", tier: "edu_pro" },
+                { label: "Campus Enterprise (200)", tier: "campus_enterprise" },
+              ].map(({ label, tier }) => (
+                <button
+                  key={tier}
+                  onClick={() => simulatePlanUpgrade(tier)}
+                  style={{
+                    fontFamily: "'JetBrains Mono', monospace",
+                    fontSize: 10,
+                    fontWeight: 700,
+                    textTransform: "uppercase",
+                    padding: "8px 6px",
+                    background: metrics?.plan_tier === tier ? T.accent : "#1A1A18",
+                    color: metrics?.plan_tier === tier ? "#FFFFFF" : T.inkTert,
+                    border: `1px solid ${metrics?.plan_tier === tier ? T.accent : "#2E2E2C"}`,
+                    borderRadius: 4,
+                    cursor: "pointer",
+                    textAlign: "center",
+                    lineHeight: 1.3,
+                    transition: "all 0.15s",
+                  }}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            {planMessage && (
+              <div style={{ marginTop: 10, display: "flex", alignItems: "center", gap: 6, padding: "8px 10px", border: `1px solid ${T.verified}`, borderRadius: 4, background: "rgba(13,104,71,0.1)" }}>
+                <Check size={12} color={T.verified} />
+                <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: T.verified }}>{planMessage}</span>
+              </div>
+            )}
+          </div>
+
+          {/* Divider */}
+          <div style={{ height: 1, background: "#222220" }} />
+
+          {/* Post opportunity shortcut */}
+          <button
+            onClick={() => setIsSlideOverOpen(true)}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 6,
+              padding: "10px",
+              border: `1px solid #2E2E2C`,
+              borderRadius: 4,
+              background: "transparent",
+              color: T.inkTert,
+              fontFamily: "'JetBrains Mono', monospace",
+              fontSize: 10,
+              fontWeight: 700,
+              textTransform: "uppercase",
+              letterSpacing: "0.1em",
+              cursor: "pointer",
+            }}
+          >
+            <PlusCircle size={12} />
+            Post New Opportunity / Offer
+          </button>
+        </aside>
+
+        {/* ── MAIN CONTENT ──────────────────────────────────────── */}
+        <main style={{ padding: "28px 28px", display: "flex", flexDirection: "column", gap: 20 }}>
+
+          {/* 4 KPI cards */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}>
+            {[
+              { label: "Profile Views",        value: metrics?.total_views || 0,            note: "+14% discovery",       icon: <Eye size={14} color={T.inkTert} />,         noteColor: T.verified },
+              { label: "WhatsApp Leads",        value: metrics?.total_whatsapp_clicks || 0,  note: "+22% chat routing",    icon: <MessageSquare size={14} color={T.verified} />, noteColor: T.verified },
+              { label: "Phone Calls",           value: metrics?.total_call_clicks || 0,      note: "Direct desk inquiries", icon: <Phone size={14} color={T.inkTert} />,        noteColor: T.inkTert },
+              { label: "Lead Routing Rate",     value: "100%",                               note: "Verified delivery",    icon: <BarChart3 size={14} color={T.accent} />,      noteColor: T.verified },
+            ].map(({ label, value, note, icon, noteColor }) => (
+              <div
+                key={label}
+                style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: 4, padding: "16px 16px 14px" }}
+              >
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+                  <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: T.inkTert }}>
+                    {label}
                   </span>
+                  {icon}
                 </div>
-                <span className="rounded bg-[#240820] border border-[#EAAA00]/40 px-2 py-0.5 font-mono text-[10px] text-[#EAAA00] font-bold uppercase">
-                  {metrics?.plan_tier || "edu_pro"}
+                <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 30, fontWeight: 700, color: T.inkPrim, lineHeight: 1, marginBottom: 6 }}>
+                  {value}
+                </div>
+                <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: noteColor, display: "flex", alignItems: "center", gap: 4 }}>
+                  <TrendingUp size={10} />
+                  {note}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Lead Inbox */}
+          <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: 4, overflow: "hidden" }}>
+            {/* Inbox header */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 16px", borderBottom: `1px solid ${T.border}` }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <ArrowUpRight size={14} color={T.inkTert} />
+                <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: T.inkPrim }}>
+                  Actionable Lead Inbox ({leads.length})
                 </span>
               </div>
+              {/* Filter pills */}
+              <div style={{ display: "flex", gap: 4 }}>
+                {(["all", "open", "responded"] as const).map((f) => (
+                  <button
+                    key={f}
+                    onClick={() => setActiveLeadFilter(f)}
+                    style={{
+                      fontFamily: "'JetBrains Mono', monospace",
+                      fontSize: 10,
+                      fontWeight: 700,
+                      textTransform: "uppercase",
+                      padding: "4px 10px",
+                      border: `1px solid ${activeLeadFilter === f ? T.accent : T.border}`,
+                      borderRadius: 3,
+                      background: activeLeadFilter === f ? T.accent : "transparent",
+                      color: activeLeadFilter === f ? "#FFFFFF" : T.inkTert,
+                      cursor: "pointer",
+                      transition: "all 0.15s",
+                    }}
+                  >
+                    {f}
+                  </button>
+                ))}
+              </div>
+            </div>
 
-              <div>
-                <div className="flex items-baseline justify-between font-mono">
-                  <span className="text-sm text-[#DDE3E8]/80 uppercase">Usage</span>
-                  <div className="text-2xl font-extrabold text-white font-mono-numbers">
-                    {metrics?.leads_used_this_month || 0}{" "}
-                    <span className="text-base font-normal text-[#DDE3E8]/70">
-                      / {metrics?.monthly_lead_quota || 5} Leads
+            {/* Table header row */}
+            <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr 1.2fr 90px 90px", padding: "8px 16px", borderBottom: `1px solid ${T.border}`, background: T.muted }}>
+              {["Inquirer", "Type", "Message", "Date", "Status"].map((h) => (
+                <span key={h} style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: T.inkTert }}>
+                  {h}
+                </span>
+              ))}
+            </div>
+
+            {/* Rows */}
+            {isLoading ? (
+              <div style={{ padding: 40, textAlign: "center", fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: T.inkTert, textTransform: "uppercase" }}>
+                Loading leads...
+              </div>
+            ) : filteredLeads.length === 0 ? (
+              <div style={{ padding: 40, textAlign: "center", fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: T.inkTert, textTransform: "uppercase" }}>
+                No leads matching current filter.
+              </div>
+            ) : (
+              filteredLeads.map((lead, idx) => (
+                <div
+                  key={lead.id}
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "1.4fr 1fr 1.2fr 90px 90px",
+                    padding: "12px 16px",
+                    borderBottom: idx < filteredLeads.length - 1 ? `1px solid ${T.border}` : "none",
+                    alignItems: "center",
+                    gap: 8,
+                  }}
+                >
+                  {/* Inquirer */}
+                  <div>
+                    <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 12, fontWeight: 700, color: T.inkPrim }}>{lead.inquirer_name}</div>
+                    <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: T.inkTert, marginTop: 2 }}>{lead.inquirer_phone}</div>
+                  </div>
+
+                  {/* Type */}
+                  <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 700, color: T.inkSec, textTransform: "uppercase" }}>
+                    {lead.enquiry_type.replace(/_/g, " ")}
+                  </div>
+
+                  {/* Message */}
+                  <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 12, color: T.inkSec, lineHeight: 1.5, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" as const }}>
+                    {lead.message}
+                  </div>
+
+                  {/* Date */}
+                  <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: T.inkTert }}>
+                    {new Date(lead.created_at).toISOString().split("T")[0]}
+                  </div>
+
+                  {/* Status + action */}
+                  <div style={{ display: "flex", flexDirection: "column", gap: 5, alignItems: "flex-start" }}>
+                    <span
+                      style={{
+                        fontFamily: "'JetBrains Mono', monospace",
+                        fontSize: 10,
+                        fontWeight: 700,
+                        textTransform: "uppercase",
+                        padding: "2px 7px",
+                        borderRadius: 3,
+                        background: lead.status === "open" ? T.sponsored : T.verified,
+                        color: "#FFFFFF",
+                      }}
+                    >
+                      {lead.status}
                     </span>
+                    <button
+                      onClick={() => toggleLeadStatus(lead.id, lead.status)}
+                      style={{
+                        fontFamily: "'JetBrains Mono', monospace",
+                        fontSize: 9,
+                        fontWeight: 700,
+                        textTransform: "uppercase",
+                        padding: "3px 7px",
+                        border: `1px solid ${T.border}`,
+                        borderRadius: 3,
+                        background: "transparent",
+                        color: T.inkSec,
+                        cursor: "pointer",
+                      }}
+                    >
+                      {lead.status === "open" ? "Mark Responded" : "Reopen"}
+                    </button>
                   </div>
                 </div>
+              ))
+            )}
+          </div>
+        </main>
+      </div>
 
-                {/* Dynamic Gold Progress Bar */}
-                <div className="mt-3 h-2.5 w-full rounded-full bg-black/40 overflow-hidden border border-white/10">
-                  <div
-                    className="h-full bg-[#EAAA00] transition-all duration-500 rounded-full"
-                    style={{
-                      width: `${Math.min(
-                        100,
-                        ((metrics?.leads_used_this_month || 0) / (metrics?.monthly_lead_quota || 1)) * 100
-                      )}%`,
-                    }}
-                  />
+      {/* ── Slide-Over Drawer ─────────────────────────────────── */}
+      {isSlideOverOpen && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 50 }}>
+          {/* Backdrop */}
+          <div
+            style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.55)" }}
+            onClick={() => setIsSlideOverOpen(false)}
+          />
+
+          {/* Panel */}
+          <div
+            style={{
+              position: "fixed",
+              top: 0,
+              right: 0,
+              bottom: 0,
+              width: 420,
+              background: T.surface,
+              borderLeft: `1px solid ${T.border}`,
+              display: "flex",
+              flexDirection: "column",
+            }}
+          >
+            {/* Drawer header */}
+            <div style={{ background: T.rail, padding: "18px 20px", borderBottom: `1px solid #222220`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <div>
+                <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", color: T.inkTert, marginBottom: 4 }}>
+                  PUBLISH OPPORTUNITY
                 </div>
-                <div className="mt-2 flex justify-between font-mono text-[10px] text-[#DDE3E8]/70">
-                  <span>Plan: {metrics?.plan_name || "Education Pro"}</span>
-                  <span>Resets 1st of next month</span>
-                </div>
-              </div>
-
-              {/* Lead routing notice */}
-              <div className="rounded-xl bg-black/30 p-3.5 border border-white/10 text-xs font-sans text-white/80 leading-relaxed">
-                Direct student inquiries, fee questions, and admission requests routed in real-time to your verified dashboard.
-              </div>
-            </div>
-
-            {/* Plan Entitlement Simulator */}
-            <div className="rounded-2xl border border-[#C3CDD6] bg-[#F8FAFC] p-5 shadow-sm space-y-3">
-              <div className="flex items-center gap-2 border-b border-[#C3CDD6] pb-3">
-                <Sliders className="h-4 w-4 text-[#3A0F34]" strokeWidth={2} />
-                <h3 className="font-mono text-xs font-bold uppercase text-[#3A0F34] tracking-wider">
-                  SaaS Plan Entitlement Simulator
+                <h3 style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 14, fontWeight: 700, color: T.railText, margin: 0, textTransform: "uppercase" }}>
+                  Post Opportunity / Offer
                 </h3>
               </div>
-              <p className="font-sans text-xs text-[#5E4B5B]">
-                Upgrade tier to expand lead quota instantly without server restarts.
+              <button
+                onClick={() => setIsSlideOverOpen(false)}
+                style={{ background: "transparent", border: "none", cursor: "pointer", color: T.inkTert, display: "flex" }}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Description */}
+            <div style={{ padding: "12px 20px", borderBottom: `1px solid ${T.border}`, background: T.muted }}>
+              <p style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 12, color: T.inkSec, margin: 0, lineHeight: 1.6 }}>
+                Submit internships, scholarships, campus drives, or student discount passes to the city moderation queue.
               </p>
-              <div className="grid grid-cols-2 gap-2 pt-1 font-mono text-xs">
-                <button
-                  onClick={() => simulatePlanUpgrade("free")}
-                  className="rounded-xl border border-[#C3CDD6] bg-white hover:bg-[#3A0F34] hover:text-white p-2.5 text-center font-bold text-[#1E081B] transition-colors shadow-xs uppercase"
-                >
-                  Free (5)
-                </button>
-                <button
-                  onClick={() => simulatePlanUpgrade("growth_business")}
-                  className="rounded-xl border border-[#C3CDD6] bg-white hover:bg-[#3A0F34] hover:text-white p-2.5 text-center font-bold text-[#1E081B] transition-colors shadow-xs uppercase"
-                >
-                  Growth (25)
-                </button>
-                <button
-                  onClick={() => simulatePlanUpgrade("edu_pro")}
-                  className="rounded-xl border border-[#C3CDD6] bg-white hover:bg-[#3A0F34] hover:text-white p-2.5 text-center font-bold text-[#1E081B] transition-colors shadow-xs uppercase"
-                >
-                  Edu Pro (50)
-                </button>
-                <button
-                  onClick={() => simulatePlanUpgrade("campus_enterprise")}
-                  className="rounded-xl border border-[#C3CDD6] bg-white hover:bg-[#3A0F34] hover:text-white p-2.5 text-center font-bold text-[#1E081B] transition-colors shadow-xs uppercase"
-                >
-                  Enterprise (200)
-                </button>
-              </div>
-
-              {planMessage && (
-                <div className="mt-2 rounded-lg bg-[#0D6E52]/10 border border-[#0D6E52] p-2.5 font-mono text-xs text-[#0D6E52] font-semibold flex items-center gap-1.5">
-                  <Check className="h-3.5 w-3.5" strokeWidth={2.5} />
-                  <span>{planMessage}</span>
-                </div>
-              )}
             </div>
 
-            {/* Post Opportunity Form */}
-            <div className="rounded-2xl border border-[#C3CDD6] bg-[#F8FAFC] p-5 shadow-sm space-y-4">
-              <div className="flex items-center gap-2 border-b border-[#C3CDD6] pb-3">
-                <PlusCircle className="h-4 w-4 text-[#3A0F34]" strokeWidth={2} />
-                <h3 className="font-mono text-xs font-bold uppercase text-[#3A0F34] tracking-wider">
-                  Post Student Opportunity / Offer
-                </h3>
-              </div>
-
+            {/* Form body */}
+            <div style={{ flex: 1, overflowY: "auto", padding: "20px" }}>
               {oppSuccess && (
-                <div className="rounded-lg bg-[#0D6E52]/10 border border-[#0D6E52] p-3 font-mono text-xs text-[#0D6E52] font-semibold flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4" />
-                  <span>{oppSuccess}</span>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16, padding: "10px 12px", border: `1px solid ${T.verified}`, borderRadius: 4, background: "rgba(13,104,71,0.08)" }}>
+                  <CheckCircle2 size={14} color={T.verified} />
+                  <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: T.verified }}>{oppSuccess}</span>
                 </div>
               )}
 
-              <form onSubmit={handleCreateOpportunity} className="space-y-3.5 font-mono text-xs">
+              <form id="opportunity-form" onSubmit={handleCreateOpportunity} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                {/* Opportunity Type */}
                 <div>
-                  <label className="block text-[#5E4B5B] uppercase font-bold mb-1">Opportunity Type</label>
+                  <label style={{ display: "block", fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: T.inkTert, marginBottom: 6 }}>
+                    Opportunity Type *
+                  </label>
                   <select
                     value={oppType}
                     onChange={(e) => setOppType(e.target.value)}
-                    className="w-full rounded-xl border border-[#C3CDD6] bg-white px-3 py-2 text-[#1E081B] outline-none focus:border-[#3A0F34]"
+                    style={inputCls}
                   >
                     <option value="internship">Internship / Apprenticeship</option>
                     <option value="scholarship">Scholarship / Merit Aid</option>
@@ -373,227 +660,114 @@ export default function TenantDashboard() {
                   </select>
                 </div>
 
+                {/* Title */}
                 <div>
-                  <label className="block text-[#5E4B5B] uppercase font-bold mb-1">Title *</label>
+                  <label style={{ display: "block", fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: T.inkTert, marginBottom: 6 }}>
+                    Title *
+                  </label>
                   <input
                     type="text"
                     value={oppTitle}
                     onChange={(e) => setOppTitle(e.target.value)}
                     placeholder="e.g. AI & Robotics Summer Internship"
-                    className="w-full rounded-xl border border-[#C3CDD6] bg-white px-3 py-2 text-[#1E081B] placeholder-[#5E4B5B] outline-none focus:border-[#3A0F34]"
                     required
+                    style={inputCls}
                   />
                 </div>
 
+                {/* Description */}
                 <div>
-                  <label className="block text-[#5E4B5B] uppercase font-bold mb-1">Description *</label>
+                  <label style={{ display: "block", fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: T.inkTert, marginBottom: 6 }}>
+                    Description *
+                  </label>
                   <textarea
                     value={oppDesc}
                     onChange={(e) => setOppDesc(e.target.value)}
-                    rows={3}
-                    placeholder="Program overview, eligibility, and guidance..."
-                    className="w-full rounded-xl border border-[#C3CDD6] bg-white px-3 py-2 text-[#1E081B] placeholder-[#5E4B5B] outline-none focus:border-[#3A0F34]"
+                    rows={4}
+                    placeholder="Program overview, eligibility criteria, and instructions..."
                     required
+                    style={{ ...inputCls, resize: "none", fontFamily: "'Plus Jakarta Sans', sans-serif", lineHeight: 1.6 }}
                   />
                 </div>
 
+                {/* Stipend */}
                 <div>
-                  <label className="block text-[#5E4B5B] uppercase font-bold mb-1">Stipend or Discount</label>
+                  <label style={{ display: "block", fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: T.inkTert, marginBottom: 6 }}>
+                    Stipend or Benefit Value
+                  </label>
                   <input
                     type="text"
                     value={oppStipend}
                     onChange={(e) => setOppStipend(e.target.value)}
                     placeholder="e.g. INR 15,000/month or 25% OFF"
-                    className="w-full rounded-xl border border-[#C3CDD6] bg-white px-3 py-2 text-[#1E081B] placeholder-[#5E4B5B] outline-none focus:border-[#3A0F34]"
+                    style={inputCls}
                   />
                 </div>
 
-                <button
-                  type="submit"
-                  disabled={isSubmittingOpp}
-                  className="w-full rounded-xl bg-[#3A0F34] hover:bg-[#240820] text-white font-mono text-xs font-bold uppercase py-2.5 shadow-sm transition-all disabled:opacity-50"
-                >
-                  {isSubmittingOpp ? "Submitting..." : "Submit to Moderation Queue"}
-                </button>
+                {/* Eligibility */}
+                <div>
+                  <label style={{ display: "block", fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: T.inkTert, marginBottom: 6 }}>
+                    Eligibility
+                  </label>
+                  <input
+                    type="text"
+                    value={oppEligibility}
+                    onChange={(e) => setOppEligibility(e.target.value)}
+                    placeholder="e.g. 2nd & 3rd Year B.Tech / BCA Students"
+                    style={inputCls}
+                  />
+                </div>
               </form>
             </div>
-          </div>
 
-          {/* Main Area (8 cols): 4 Sculpted KPI Cards + Leads Inbox */}
-          <div className="lg:col-span-8 space-y-6">
-            {/* 4 Sculpted KPI Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {/* Profile Views */}
-              <div className="rounded-2xl border border-[#C3CDD6] bg-[#F8FAFC] p-5 shadow-sm hover:shadow-md transition-all">
-                <div className="flex items-center justify-between text-[#5E4B5B] font-mono text-xs uppercase font-semibold">
-                  <span>Profile Views</span>
-                  <Eye className="h-4 w-4 text-[#3A0F34]" strokeWidth={2} />
-                </div>
-                <div className="mt-3 font-mono text-3xl font-extrabold text-[#3A0F34] font-mono-numbers">
-                  {metrics?.total_views || 0}
-                </div>
-                <div className="mt-1 flex items-center gap-1 text-[11px] font-mono text-[#0D6E52] font-semibold">
-                  <TrendingUp className="h-3 w-3" />
-                  <span>+14% discovery</span>
-                </div>
-              </div>
-
-              {/* WhatsApp Inquiries */}
-              <div className="rounded-2xl border border-[#C3CDD6] bg-[#F8FAFC] p-5 shadow-sm hover:shadow-md transition-all">
-                <div className="flex items-center justify-between text-[#5E4B5B] font-mono text-xs uppercase font-semibold">
-                  <span>WhatsApp Leads</span>
-                  <MessageSquare className="h-4 w-4 text-[#0D6E52]" strokeWidth={2} />
-                </div>
-                <div className="mt-3 font-mono text-3xl font-extrabold text-[#0D6E52] font-mono-numbers">
-                  {metrics?.total_whatsapp_clicks || 0}
-                </div>
-                <div className="mt-1 flex items-center gap-1 text-[11px] font-mono text-[#0D6E52] font-semibold">
-                  <TrendingUp className="h-3 w-3" />
-                  <span>+22% chat routing</span>
-                </div>
-              </div>
-
-              {/* Phone Calls */}
-              <div className="rounded-2xl border border-[#C3CDD6] bg-[#F8FAFC] p-5 shadow-sm hover:shadow-md transition-all">
-                <div className="flex items-center justify-between text-[#5E4B5B] font-mono text-xs uppercase font-semibold">
-                  <span>Phone Calls</span>
-                  <Phone className="h-4 w-4 text-[#3A0F34]" strokeWidth={2} />
-                </div>
-                <div className="mt-3 font-mono text-3xl font-extrabold text-[#3A0F34] font-mono-numbers">
-                  {metrics?.total_call_clicks || 0}
-                </div>
-                <div className="mt-1 flex items-center gap-1 text-[11px] font-mono text-[#5E4B5B]">
-                  <ArrowUpRight className="h-3 w-3" />
-                  <span>Direct desk inquiries</span>
-                </div>
-              </div>
-
-              {/* Conversion Rate */}
-              <div className="rounded-2xl border border-[#C3CDD6] bg-[#F8FAFC] p-5 shadow-sm hover:shadow-md transition-all">
-                <div className="flex items-center justify-between text-[#5E4B5B] font-mono text-xs uppercase font-semibold">
-                  <span>Lead Routing</span>
-                  <Sparkles className="h-4 w-4 text-[#EAAA00]" strokeWidth={2} />
-                </div>
-                <div className="mt-3 font-mono text-3xl font-extrabold text-[#1E081B] font-mono-numbers">
-                  100%
-                </div>
-                <div className="mt-1 text-[11px] font-mono text-[#0D6E52] font-semibold">
-                  Verified delivery
-                </div>
-              </div>
-            </div>
-
-            {/* Actionable Lead Inbox Table / Cards */}
-            <div className="rounded-2xl border border-[#C3CDD6] bg-[#F8FAFC] p-6 shadow-sm space-y-4">
-              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#C3CDD6] pb-4">
-                <div className="flex items-center gap-2">
-                  <Users className="h-5 w-5 text-[#3A0F34]" strokeWidth={2} />
-                  <h2 className="font-mono text-sm font-bold uppercase tracking-wider text-[#3A0F34]">
-                    Actionable Lead Inbox ({leads.length})
-                  </h2>
-                </div>
-
-                {/* Filter Pills */}
-                <div className="flex items-center gap-1.5">
-                  <button
-                    onClick={() => setActiveLeadFilter("all")}
-                    className={`rounded-xl px-3 py-1 font-mono text-xs uppercase font-bold transition-all ${
-                      activeLeadFilter === "all"
-                        ? "bg-[#3A0F34] text-white shadow-xs"
-                        : "bg-white border border-[#C3CDD6] text-[#5E4B5B] hover:text-[#1E081B]"
-                    }`}
-                  >
-                    All
-                  </button>
-                  <button
-                    onClick={() => setActiveLeadFilter("open")}
-                    className={`rounded-xl px-3 py-1 font-mono text-xs uppercase font-bold transition-all ${
-                      activeLeadFilter === "open"
-                        ? "bg-[#3A0F34] text-white shadow-xs"
-                        : "bg-white border border-[#C3CDD6] text-[#5E4B5B] hover:text-[#1E081B]"
-                    }`}
-                  >
-                    Open
-                  </button>
-                  <button
-                    onClick={() => setActiveLeadFilter("responded")}
-                    className={`rounded-xl px-3 py-1 font-mono text-xs uppercase font-bold transition-all ${
-                      activeLeadFilter === "responded"
-                        ? "bg-[#3A0F34] text-white shadow-xs"
-                        : "bg-white border border-[#C3CDD6] text-[#5E4B5B] hover:text-[#1E081B]"
-                    }`}
-                  >
-                    Responded
-                  </button>
-                </div>
-              </div>
-
-              {isLoading ? (
-                <div className="py-12 text-center font-mono text-xs text-[#5E4B5B] uppercase">
-                  Loading leads...
-                </div>
-              ) : filteredLeads.length === 0 ? (
-                <div className="py-12 text-center font-mono text-xs text-[#5E4B5B] uppercase">
-                  No leads matching current filter.
-                </div>
-              ) : (
-                <div className="space-y-3.5">
-                  {filteredLeads.map((lead) => (
-                    <div
-                      key={lead.id}
-                      className="rounded-xl border border-[#C3CDD6] bg-white p-4.5 shadow-xs hover:border-[#3A0F34] transition-all space-y-2.5"
-                    >
-                      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#C3CDD6]/60 pb-2">
-                        <div className="flex items-center gap-2">
-                          <span className="font-mono text-xs font-bold text-[#1E081B] uppercase">
-                            {lead.inquirer_name}
-                          </span>
-                          <span className="rounded bg-[#DDE3E8] px-2 py-0.5 font-mono text-[10px] font-semibold text-[#1E081B] uppercase">
-                            {lead.enquiry_type.replace(/_/g, " ")}
-                          </span>
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                          <span className="font-mono text-[10px] text-[#5E4B5B] font-mono-numbers">
-                            {new Date(lead.created_at).toISOString().split("T")[0]}
-                          </span>
-                          <span
-                            className={`rounded-md px-2 py-0.5 font-mono text-[9px] font-bold uppercase shadow-xs ${
-                              lead.status === "open"
-                                ? "bg-[#EAAA00] text-[#240820]"
-                                : "bg-[#0D6E52] text-white"
-                            }`}
-                          >
-                            {lead.status}
-                          </span>
-                        </div>
-                      </div>
-
-                      <p className="font-sans text-xs text-[#1E081B]/85 leading-relaxed">
-                        {lead.message}
-                      </p>
-
-                      <div className="flex flex-wrap items-center justify-between gap-2 border-t border-[#C3CDD6]/60 pt-2 font-mono text-[11px] text-[#5E4B5B]">
-                        <div className="flex items-center gap-3">
-                          <span>Phone: <strong className="text-[#1E081B]">{lead.inquirer_phone}</strong></span>
-                          {lead.inquirer_email && <span>Email: <strong className="text-[#1E081B]">{lead.inquirer_email}</strong></span>}
-                        </div>
-
-                        <button
-                          onClick={() => toggleLeadStatus(lead.id, lead.status)}
-                          className="rounded-lg border border-[#C3CDD6] bg-[#DDE3E8]/60 hover:bg-[#3A0F34] hover:text-white px-3 py-1 font-mono text-[10px] font-bold text-[#1E081B] uppercase transition-colors"
-                        >
-                          Mark as {lead.status === "open" ? "Responded" : "Open"}
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+            {/* Drawer footer */}
+            <div style={{ padding: "14px 20px", borderTop: `1px solid ${T.border}`, background: T.muted, display: "flex", justifyContent: "flex-end", gap: 10 }}>
+              <button
+                type="button"
+                onClick={() => setIsSlideOverOpen(false)}
+                style={{
+                  fontFamily: "'JetBrains Mono', monospace",
+                  fontSize: 11,
+                  fontWeight: 700,
+                  textTransform: "uppercase",
+                  padding: "8px 16px",
+                  border: `1px solid ${T.border}`,
+                  borderRadius: 4,
+                  background: T.surface,
+                  color: T.inkSec,
+                  cursor: "pointer",
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                form="opportunity-form"
+                disabled={isSubmittingOpp}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                  fontFamily: "'JetBrains Mono', monospace",
+                  fontSize: 11,
+                  fontWeight: 700,
+                  textTransform: "uppercase",
+                  padding: "8px 16px",
+                  border: "none",
+                  borderRadius: 4,
+                  background: isSubmittingOpp ? T.inkTert : T.accent,
+                  color: "#FFFFFF",
+                  cursor: isSubmittingOpp ? "not-allowed" : "pointer",
+                  transition: "background 0.15s",
+                }}
+              >
+                <Send size={12} />
+                {isSubmittingOpp ? "Submitting..." : "Submit to Moderation"}
+              </button>
             </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

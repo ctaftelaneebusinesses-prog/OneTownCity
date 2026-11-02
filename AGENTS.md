@@ -56,3 +56,8 @@ Execute the following steps sequentially, verifying each step via terminal and M
 
 ### 5. GIT REPOSITORY RULES
 - Strict Single Remote: All git operations and pushes must strictly target `https://github.com/ctaftelaneebusinesses-prog/OneTownCity.git`. Never add, retarget, or push to any other remote repository.
+
+### 6. MANDATORY VECTOR ASSET RULE (SVG FIRST)
+- Strictly convert all images, covers, emblems, logos, and illustrations to resolution-independent SVG vector graphics.
+- Never render blurry raster PNG/JPG/WEBP files for UI covers, category headers, or brand monograms.
+- Use clean architectural geometric vector SVGs grounded in our Swiss Civic Editorial palette (`#111110`, `#F4F2EE`, `#D8D3C8`, `#FF4F17`, `#0D6847`, `#D97706`) ensuring crisp, infinite scaling at any DPI with zero network lag.

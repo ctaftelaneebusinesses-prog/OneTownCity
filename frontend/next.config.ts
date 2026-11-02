@@ -29,9 +29,9 @@ const nextConfig: NextConfig = {
             value: [
               "default-src 'self'",
               "script-src 'self' 'unsafe-eval' 'unsafe-inline'", // unsafe-eval needed for Next.js dev
-              "style-src 'self' 'unsafe-inline'",
+              "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "img-src 'self' blob: data: https:",
-              "font-src 'self'",
+              "font-src 'self' https://fonts.gstatic.com data:",
               "object-src 'none'",
               "connect-src 'self' http://localhost:8080 http://127.0.0.1:8080 https://sentry.io wss://localhost:3000",
             ].join("; "),
@@ -47,6 +47,9 @@ const nextConfig: NextConfig = {
 
   // Image optimization
   images: {
+    dangerouslyAllowSVG: true,
+    contentDispositionType: "attachment",
+    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
     remotePatterns: [
       { protocol: "https", hostname: "images.unsplash.com" },
       { protocol: "https", hostname: "pub-*.r2.dev" },

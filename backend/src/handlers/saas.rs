@@ -187,6 +187,19 @@ pub async fn update_lead_status(
         ));
     }
 
+    state.worker.enqueue(crate::worker::AuditJob {
+        entity_type: "lead".to_string(),
+        entity_id: id.to_string(),
+        action: format!("status_{}", dto.status),
+        actor_id: Some(tenant.user_id),
+        actor_role: "tenant_owner".to_string(),
+        payload: json!({
+            "tenant_id": tenant.tenant_id,
+            "new_status": dto.status,
+        }),
+        simulate_dispatch: false,
+    });
+
     Ok(Json(json!({
         "status": "updated",
         "lead_id": id,
@@ -245,6 +258,20 @@ pub async fn create_opportunity(
             Json(json!({ "error": "Failed to create opportunity" })),
         )
     })?;
+
+    state.worker.enqueue(crate::worker::AuditJob {
+        entity_type: "opportunity".to_string(),
+        entity_id: opp_id.to_string(),
+        action: "created_submission".to_string(),
+        actor_id: Some(tenant.user_id),
+        actor_role: "tenant_owner".to_string(),
+        payload: json!({
+            "tenant_id": tenant.tenant_id,
+            "title": dto.title,
+            "opportunity_type": format!("{:?}", dto.opportunity_type),
+        }),
+        simulate_dispatch: false,
+    });
 
     Ok((
         StatusCode::CREATED,

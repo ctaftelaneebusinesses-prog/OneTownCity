@@ -3,94 +3,137 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTown } from "./TownContext";
-import { MapPin, ShieldCheck, LayoutDashboard, Compass, PlusCircle } from "lucide-react";
+import { useSpotlight } from "./SpotlightProvider";
+import { MapPin, ShieldCheck, LayoutDashboard, Compass, Search, Map } from "lucide-react";
 
 export function Navigation() {
   const pathname = usePathname();
   const { town, setTown } = useTown();
+  const { toggle } = useSpotlight();
+
+  const navLinks = [
+    { href: "/",             label: "Index",          icon: Compass,         exact: true },
+    { href: "/dashboard",    label: "SaaS Studio",    icon: LayoutDashboard, exact: false },
+    { href: "/architecture", label: "System Map",     icon: Map,             exact: false },
+    { href: "/admin",        label: "Governance",     icon: ShieldCheck,     exact: false },
+  ];
+
+  const isActive = (href: string, exact: boolean) =>
+    exact ? pathname === href : pathname.startsWith(href);
 
   return (
-    <header className="sticky top-0 z-40 border-b border-[#EAAA00]/30 bg-[#3A0F34] text-[#F8FAFC] shadow-md">
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
-        {/* Brand identity */}
-        <div className="flex items-center gap-6">
-          <Link href="/" className="flex items-center gap-2.5 group">
-            <div className="h-6 w-1.5 bg-[#EAAA00] group-hover:bg-white transition-colors rounded-xs" />
-            <span className="font-mono text-base font-bold tracking-wider text-[#F8FAFC] uppercase">
-              OneTownCity
-            </span>
-            <span className="rounded bg-[#240820] border border-[#EAAA00]/40 px-2 py-0.5 font-mono text-[10px] font-semibold text-[#EAAA00] uppercase tracking-wider">
-              Local SaaS
-            </span>
-          </Link>
+    <header
+      className="sticky top-0 z-40 border-b"
+      style={{
+        backgroundColor: "var(--bg-surface)",
+        borderColor: "var(--border-grid)",
+      }}
+    >
+      <div className="mx-auto flex max-w-7xl items-center justify-between px-4 sm:px-6 h-[52px] gap-4">
 
-          {/* Persistent Town Selector */}
-          <div className="flex items-center gap-1.5 rounded border border-[#C3CDD6]/30 bg-[#240820] px-2.5 py-1 focus-within:ring-1 focus-within:ring-[#EAAA00] transition-shadow">
-            <MapPin className="h-3.5 w-3.5 text-[#EAAA00]" strokeWidth={1.75} />
-            <span className="font-mono text-xs text-[#DDE3E8]/70 uppercase">Town:</span>
+        {/* Brand mark */}
+        <Link
+          href="/"
+          className="flex items-center gap-2.5 shrink-0 pressable"
+          title="OneTownCity — Verified Hyperlocal Index"
+        >
+          {/* Geometric mark: two stacked bars */}
+          <div className="flex flex-col gap-[3px] shrink-0">
+            <div
+              className="h-[3px] w-[18px] rounded-full"
+              style={{ backgroundColor: "var(--accent-signal)" }}
+            />
+            <div
+              className="h-[3px] w-[12px] rounded-full"
+              style={{ backgroundColor: "var(--ink-primary)" }}
+            />
+            <div
+              className="h-[3px] w-[16px] rounded-full"
+              style={{ backgroundColor: "var(--border-grid)" }}
+            />
+          </div>
+          <span
+            className="font-mono font-bold tracking-tight uppercase hidden sm:inline"
+            style={{ fontSize: "13px", color: "var(--ink-primary)", letterSpacing: "0.04em" }}
+          >
+            ONETOWNCITY
+          </span>
+        </Link>
+
+        {/* Main nav links */}
+        <nav className="flex items-center gap-1 flex-1 justify-center" aria-label="Main navigation">
+          {navLinks.map(({ href, label, icon: Icon, exact }) => {
+            const active = isActive(href, exact);
+            return (
+              <Link
+                key={href}
+                href={href}
+                className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded transition-colors pressable font-mono uppercase"
+                style={{
+                  fontSize: "11px",
+                  fontWeight: 600,
+                  letterSpacing: "0.04em",
+                  color: active ? "var(--ink-primary)" : "var(--ink-secondary)",
+                  backgroundColor: active ? "var(--bg-muted)" : "transparent",
+                  textDecoration: "none",
+                }}
+                aria-current={active ? "page" : undefined}
+                aria-label={label}
+                title={label}
+              >
+                <Icon className="h-3.5 w-3.5 shrink-0" strokeWidth={1.75} aria-hidden />
+                <span className="hidden sm:inline">{label}</span>
+              </Link>
+            );
+          })}
+        </nav>
+
+        {/* Right: Town switcher + Spotlight trigger */}
+        <div className="flex items-center gap-2 shrink-0">
+
+          {/* Town selector */}
+          <div
+            className="flex items-center gap-1.5 rounded px-2.5 py-1.5 border pressable"
+            style={{
+              borderColor: "var(--border-grid)",
+              backgroundColor: "var(--bg-muted)",
+            }}
+          >
+            <MapPin
+              className="h-3 w-3 shrink-0"
+              strokeWidth={2}
+              style={{ color: "var(--accent-signal)" }}
+              aria-hidden
+            />
             <select
               value={town}
               onChange={(e) => setTown(e.target.value)}
-              className="bg-transparent font-mono text-xs font-semibold text-[#F8FAFC] outline-none cursor-pointer"
+              className="bg-transparent font-mono font-semibold outline-none cursor-pointer"
+              style={{ fontSize: "11px", color: "var(--ink-primary)", letterSpacing: "0.02em" }}
+              aria-label="Select town"
             >
-              <option value="Nellore" className="bg-[#240820] text-[#F8FAFC]">
-                Nellore (AP)
-              </option>
-              <option value="Kuppam" className="bg-[#240820] text-[#F8FAFC]">
-                Kuppam (AP)
-              </option>
+              <option value="Nellore">Nellore</option>
+              <option value="Kuppam">Kuppam</option>
             </select>
           </div>
-        </div>
 
-        {/* Global Navigation Links & Action */}
-        <div className="flex items-center gap-3">
-          <nav className="flex items-center gap-1 sm:gap-2">
-            <Link
-              href="/"
-              className={`flex items-center gap-1.5 rounded px-3 py-1.5 font-mono text-xs font-semibold uppercase transition-all ${
-                pathname === "/"
-                  ? "bg-[#EAAA00] text-[#240820] shadow-xs"
-                  : "text-[#F8FAFC]/80 hover:bg-[#240820] hover:text-[#F8FAFC]"
-              }`}
-            >
-              <Compass className="h-3.5 w-3.5" strokeWidth={1.75} />
-              <span>Discovery</span>
-            </Link>
-
-            <Link
-              href="/dashboard"
-              className={`flex items-center gap-1.5 rounded px-3 py-1.5 font-mono text-xs font-semibold uppercase transition-all ${
-                pathname.startsWith("/dashboard")
-                  ? "bg-[#EAAA00] text-[#240820] shadow-xs"
-                  : "text-[#F8FAFC]/80 hover:bg-[#240820] hover:text-[#F8FAFC]"
-              }`}
-            >
-              <LayoutDashboard className="h-3.5 w-3.5" strokeWidth={1.75} />
-              <span>SaaS Portal</span>
-            </Link>
-
-            <Link
-              href="/admin"
-              className={`flex items-center gap-1.5 rounded px-3 py-1.5 font-mono text-xs font-semibold uppercase transition-all ${
-                pathname.startsWith("/admin")
-                  ? "bg-[#EAAA00] text-[#240820] shadow-xs"
-                  : "text-[#F8FAFC]/80 hover:bg-[#240820] hover:text-[#F8FAFC]"
-              }`}
-            >
-              <ShieldCheck className="h-3.5 w-3.5" strokeWidth={1.75} />
-              <span>Governance</span>
-            </Link>
-          </nav>
-
-          {/* Action pill button */}
-          <Link
-            href="/dashboard"
-            className="hidden md:inline-flex items-center gap-1.5 rounded-full bg-[#EAAA00] px-3.5 py-1.5 font-mono text-xs font-bold text-[#240820] shadow hover:bg-[#ffc02e] hover:shadow-md transition-all active:scale-95"
+          {/* Spotlight search trigger */}
+          <button
+            onClick={toggle}
+            className="flex items-center gap-2 rounded px-2.5 py-1.5 border pressable"
+            style={{
+              borderColor: "var(--border-grid)",
+              backgroundColor: "var(--bg-muted)",
+              color: "var(--ink-secondary)",
+            }}
+            aria-label="Open spotlight search (Ctrl+K)"
+            title="Search (Ctrl+K)"
           >
-            <PlusCircle className="h-3.5 w-3.5" strokeWidth={2} />
-            <span>Add Listing / Partner</span>
-          </Link>
+            <Search className="h-3.5 w-3.5 shrink-0" strokeWidth={1.75} aria-hidden />
+            <span className="font-mono hidden sm:inline" style={{ fontSize: "10px", letterSpacing: "0.04em" }}>
+              CTRL+K
+            </span>
+          </button>
         </div>
       </div>
     </header>

@@ -123,10 +123,10 @@ pub async fn action_moderation_item(
     Path(id): Path<Uuid>,
     Json(dto): Json<ModerationActionDto>,
 ) -> Result<Json<Value>, (StatusCode, Json<Value>)> {
-    match dto.entity_type.as_str() {
+    let update_result = match dto.entity_type.as_str() {
         "listing" => {
             let verif = dto.verification.unwrap_or(VerificationStatus::DetailsReviewed);
-            let reason = dto.rejection_reason.unwrap_or_default();
+            let reason = dto.rejection_reason.clone().unwrap_or_default();
             sqlx::query!(
                 r#"
                 UPDATE listings
@@ -176,14 +176,29 @@ pub async fn action_moderation_item(
                 Json(json!({ "error": "Unknown entity_type (listing, opportunity, news)" })),
             ));
         }
-    }
-    .map_err(|e| {
+    };
+
+    update_result.map_err(|e| {
         tracing::error!("Moderation update failed: {}", e);
         (
             StatusCode::INTERNAL_SERVER_ERROR,
             Json(json!({ "error": "Failed to update item" })),
         )
     })?;
+
+    state.worker.enqueue(crate::worker::AuditJob {
+        entity_type: dto.entity_type.clone(),
+        entity_id: id.to_string(),
+        action: format!("moderation_{:?}", dto.status),
+        actor_id: Some(_admin.user_id),
+        actor_role: format!("{:?}", _admin.role),
+        payload: json!({
+            "status": dto.status,
+            "verification": dto.verification,
+            "rejection_reason": dto.rejection_reason,
+        }),
+        simulate_dispatch: true,
+    });
 
     Ok(Json(json!({
         "status": "updated",
@@ -260,9 +275,51 @@ pub async fn action_report(
         ));
     }
 
+    state.worker.enqueue(crate::worker::AuditJob {
+        entity_type: "report".to_string(),
+        entity_id: id.to_string(),
+        action: format!("report_{:?}", dto.status),
+        actor_id: Some(_admin.user_id),
+        actor_role: format!("{:?}", _admin.role),
+        payload: json!({
+            "status": dto.status,
+        }),
+        simulate_dispatch: false,
+    });
+
     Ok(Json(json!({
         "status": "updated",
         "report_id": id,
         "new_status": dto.status
     })))
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// GET /api/v1/admin/audit-logs (Immutable Governance Audit Trail)
+// ─────────────────────────────────────────────────────────────────────────────
+
+pub async fn list_audit_logs(
+    State(state): State<Arc<AppState>>,
+    _admin: AdminUserContext,
+) -> Result<Json<Vec<crate::models::AuditLog>>, (StatusCode, Json<Value>)> {
+    let logs = sqlx::query_as!(
+        crate::models::AuditLog,
+        r#"
+        SELECT id, entity_type, entity_id, action, actor_id, actor_role, payload, created_at
+        FROM audit_logs
+        ORDER BY created_at DESC
+        LIMIT 50
+        "#
+    )
+    .fetch_all(&state.db)
+    .await
+    .map_err(|e| {
+        tracing::error!("Error fetching audit logs: {}", e);
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({ "error": "Database error" })),
+        )
+    })?;
+
+    Ok(Json(logs))
 }

@@ -1,0 +1,51 @@
+<svg width="800" height="450" viewBox="0 0 800 450" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="biz-sky" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1A1918"/>
+      <stop offset="50%" stop-color="#141312"/>
+      <stop offset="100%" stop-color="#0E0D0C"/>
+    </linearGradient>
+    <pattern id="biz-grid" width="30" height="30" patternUnits="userSpaceOnUse">
+      <path d="M 30 0 L 0 0 0 30" fill="none" stroke="rgba(216,211,200,0.06)" stroke-width="0.8"/>
+    </pattern>
+  </defs>
+
+  <rect width="800" height="450" fill="url(#biz-sky)"/>
+  <rect width="800" height="450" fill="url(#biz-grid)"/>
+
+  <line x1="50" y1="50" x2="750" y2="50" stroke="rgba(216,211,200,0.15)" stroke-width="1" stroke-dasharray="2 4"/>
+  <line x1="50" y1="400" x2="750" y2="400" stroke="rgba(216,211,200,0.2)" stroke-width="1"/>
+
+  <!-- Modern Office Studio Facade -->
+  <rect x="140" y="110" width="520" height="290" fill="#1C1A19" stroke="rgba(216,211,200,0.2)" stroke-width="1.2"/>
+
+  <!-- Glass Curtain Wall Structural Ribs -->
+  <g stroke="rgba(216,211,200,0.25)" stroke-width="1">
+    <line x1="140" y1="180" x2="660" y2="180"/>
+    <line x1="140" y1="250" x2="660" y2="250"/>
+    <line x1="140" y1="320" x2="660" y2="320"/>
+
+    <line x1="220" y1="110" x2="220" y2="400"/>
+    <line x1="300" y1="110" x2="300" y2="400"/>
+    <line x1="380" y1="110" x2="380" y2="400"/>
+    <line x1="460" y1="110" x2="460" y2="400"/>
+    <line x1="540" y1="110" x2="540" y2="400"/>
+    <line x1="620" y1="110" x2="620" y2="400"/>
+  </g>
+
+  <!-- Cantilevered Mezzanine Boardroom Box -->
+  <rect x="340" y="140" width="200" height="90" fill="#242120" stroke="#FF4F17" stroke-width="1.5"/>
+  <line x1="350" y1="185" x2="530" y2="185" stroke="rgba(255,79,23,0.3)" stroke-width="1"/>
+  <text x="440" y="165" fill="#FF4F17" font-family="monospace" font-size="9" font-weight="700" text-anchor="middle" letter-spacing="2">EXECUTIVE SUITE</text>
+
+  <!-- Entrance Portal -->
+  <rect x="360" y="320" width="80" height="80" fill="#121110" stroke="#D8D3C8" stroke-width="1.5"/>
+
+  <!-- Metadata -->
+  <g font-family="monospace" font-size="9" fill="rgba(244,242,238,0.7)" letter-spacing="1.5">
+    <text x="60" y="75">COMMERCIAL 05 // ENTERPRISE CONSULTING &amp; ADVISORY TOWER</text>
+    <text x="60" y="95" font-size="8" fill="#8B877F">LEGAL COMPLIANCE · AUDITING · TAXATION · MANAGEMENT</text>
+    <text x="740" y="75" text-anchor="end" fill="#0D6847" font-weight="700">VERIFIED FIRM</text>
+    <text x="740" y="95" text-anchor="end" font-size="8" fill="#8B877F">DISTRICT HEADQUARTERS</text>
+  </g>
+</svg>

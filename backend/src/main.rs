@@ -17,10 +17,12 @@ mod auth;
 mod handlers;
 mod models;
 mod routes;
+mod worker;
 
 /// Shared application state
 pub struct AppState {
     pub db: PgPool,
+    pub worker: worker::WorkerHandle,
 }
 
 #[tokio::main]
@@ -31,14 +33,14 @@ async fn main() -> anyhow::Result<()> {
     // Initialize tracing
     init_tracing();
 
-    // Database connection pool (max 15 connections for local 2GB footprint)
+    // Database connection pool (max 30 connections for local concurrency & PgBouncer alignment)
     let database_url = std::env::var("DATABASE_URL").unwrap_or_else(|_| {
         "postgresql://otc_admin:otc_local_password@127.0.0.1:5432/onetowncity_saas".into()
     });
 
     let pool = sqlx::postgres::PgPoolOptions::new()
-        .max_connections(15)
-        .min_connections(2)
+        .max_connections(30)
+        .min_connections(5)
         .acquire_timeout(Duration::from_secs(5))
         .connect(&database_url)
         .await?;
@@ -46,7 +48,13 @@ async fn main() -> anyhow::Result<()> {
     // Run pending migrations
     sqlx::migrate!("./migrations").run(&pool).await?;
 
-    let state = Arc::new(AppState { db: pool });
+    // Start bounded async audit & notification worker (capacity: 100)
+    let (worker_handle, _worker_task) = worker::start_worker(pool.clone());
+
+    let state = Arc::new(AppState {
+        db: pool,
+        worker: worker_handle,
+    });
 
     // CORS — allow localhost and 127.0.0.1 for browser and Playwright testing
     let cors = CorsLayer::new()

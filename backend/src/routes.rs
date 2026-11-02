@@ -32,4 +32,5 @@ pub fn api_router() -> Router<Arc<AppState>> {
         )
         .route("/admin/reports", get(admin::list_reports))
         .route("/admin/reports/{id}", patch(admin::action_report))
+        .route("/admin/audit-logs", get(admin::list_audit_logs))
 }

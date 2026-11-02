@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { X, CheckCircle, AlertCircle, Send } from "lucide-react";
+import { X, CheckCircle, Send } from "lucide-react";
 
 type EnquiryModalProps = {
   isOpen: boolean;
@@ -62,7 +62,7 @@ export function EnquiryModal({ isOpen, onClose, listing, apiUrl }: EnquiryModalP
       setTimeout(() => {
         setSuccessMsg("");
         onClose();
-      }, 2000);
+      }, 1800);
     } catch (err: unknown) {
       setErrorMsg(err instanceof Error ? err.message : "Error submitting enquiry");
     } finally {
@@ -70,142 +70,255 @@ export function EnquiryModal({ isOpen, onClose, listing, apiUrl }: EnquiryModalP
     }
   };
 
+  const inputStyle: React.CSSProperties = {
+    width: "100%",
+    borderRadius: "6px",
+    border: "1px solid #D8D3C8",
+    backgroundColor: "#FFFFFF",
+    padding: "8px 12px",
+    fontFamily: "var(--font-mono)",
+    fontSize: "12px",
+    color: "#111110",
+    outline: "none",
+  };
+
+  const labelStyle: React.CSSProperties = {
+    display: "block",
+    fontFamily: "var(--font-mono)",
+    fontSize: "10px",
+    fontWeight: 700,
+    letterSpacing: "0.06em",
+    textTransform: "uppercase",
+    color: "#575551",
+    marginBottom: "6px",
+  };
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div className="w-full max-w-lg rounded-lg border border-[#C3CDD6] bg-[#F8FAFC] p-6 shadow-2xl">
-        <div className="flex items-center justify-between border-b border-[#C3CDD6] pb-3">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-overlay-enter"
+      style={{ backgroundColor: "rgba(17,17,16,0.55)", backdropFilter: "blur(4px)" }}
+    >
+      <div
+        className="w-full max-w-lg animate-modal-enter"
+        style={{
+          backgroundColor: "#FFFFFF",
+          border: "1px solid #D8D3C8",
+          borderRadius: "10px",
+          padding: "28px",
+        }}
+      >
+        {/* Header */}
+        <div
+          className="flex items-center justify-between pb-4"
+          style={{ borderBottom: "1px solid #D8D3C8", marginBottom: "20px" }}
+        >
           <div>
-            <div className="font-mono text-[10px] text-[#EAAA00] uppercase tracking-widest font-bold">
-              Direct Lead Capture
-            </div>
-            <h3 className="font-mono text-base font-bold text-[#3A0F34]">
-              {listing.vertical === "education" ? "Course & Admission Request" : "Customer Enquiry"}
+            <h3
+              style={{
+                fontFamily: "var(--font-mono)",
+                fontSize: "13px",
+                fontWeight: 700,
+                color: "#111110",
+                letterSpacing: "0.02em",
+                textTransform: "uppercase",
+                margin: 0,
+              }}
+            >
+              {listing.vertical === "education" ? "Admission Enquiry" : "Customer Enquiry"}
             </h3>
+            <p
+              style={{
+                fontFamily: "var(--font-mono)",
+                fontSize: "11px",
+                color: "#8B877F",
+                margin: "4px 0 0",
+              }}
+            >
+              {listing.name}
+            </p>
           </div>
           <button
             onClick={onClose}
-            className="rounded p-1 text-[#5E4B5B] hover:bg-[#DDE3E8] hover:text-[#1E081B] transition-colors"
+            className="pressable"
+            aria-label="Close dialog"
+            style={{
+              padding: "6px",
+              borderRadius: "6px",
+              border: "1px solid #D8D3C8",
+              background: "transparent",
+              color: "#575551",
+              cursor: "pointer",
+            }}
           >
-            <X className="h-5 w-5" strokeWidth={1.75} />
+            <X className="h-4 w-4" strokeWidth={1.75} />
           </button>
         </div>
 
-        <div className="my-3 font-mono text-xs text-[#5E4B5B]">
-          Target: <span className="font-bold text-[#1E081B]">{listing.name}</span>
-        </div>
-
         {successMsg ? (
-          <div className="my-6 flex items-center gap-2 rounded-lg border border-[#0D6E52] bg-[#0D6E52]/10 p-4 font-mono text-xs text-[#0D6E52] font-semibold">
-            <CheckCircle className="h-4 w-4 text-[#0D6E52]" strokeWidth={2} />
+          <div
+            className="animate-modal-enter"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "10px",
+              padding: "16px",
+              border: "1px solid rgba(13,104,71,0.25)",
+              borderRadius: "6px",
+              backgroundColor: "#ECFDF5",
+              color: "#0D6847",
+              fontFamily: "var(--font-mono)",
+              fontSize: "12px",
+              fontWeight: 600,
+            }}
+          >
+            <CheckCircle className="h-4 w-4 shrink-0" strokeWidth={2} />
             <span>{successMsg}</span>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
             {errorMsg && (
-              <div className="flex items-center gap-2 rounded-lg border border-[#B93829] bg-[#B93829]/10 p-2.5 font-mono text-xs text-[#B93829]">
-                <AlertCircle className="h-4 w-4 text-[#B93829]" strokeWidth={2} />
-                <span>{errorMsg}</span>
+              <div
+                style={{
+                  padding: "10px 12px",
+                  border: "1px solid rgba(255,79,23,0.3)",
+                  borderRadius: "6px",
+                  backgroundColor: "rgba(255,79,23,0.06)",
+                  color: "#D93A08",
+                  fontFamily: "var(--font-mono)",
+                  fontSize: "11px",
+                }}
+              >
+                {errorMsg}
               </div>
             )}
 
             <div>
-              <label className="block font-mono text-xs text-[#5E4B5B] uppercase font-bold mb-1">
-                Your Full Name *
-              </label>
+              <label style={labelStyle}>Your Full Name *</label>
               <input
                 type="text"
                 value={inquirerName}
                 onChange={(e) => setInquirerName(e.target.value)}
                 placeholder="e.g. Ramesh Varma"
-                className="w-full rounded border border-[#C3CDD6] bg-[#DDE3E8]/30 px-3 py-2 font-mono text-xs text-[#1E081B] placeholder-[#5E4B5B] outline-none focus:border-[#3A0F34]"
                 required
+                style={inputStyle}
               />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
               <div>
-                <label className="block font-mono text-xs text-[#5E4B5B] uppercase font-bold mb-1">
-                  Phone Number *
-                </label>
+                <label style={labelStyle}>Phone Number *</label>
                 <input
                   type="tel"
                   value={inquirerPhone}
                   onChange={(e) => setInquirerPhone(e.target.value)}
                   placeholder="+91-9876543210"
-                  className="w-full rounded border border-[#C3CDD6] bg-[#DDE3E8]/30 px-3 py-2 font-mono text-xs text-[#1E081B] placeholder-[#5E4B5B] outline-none focus:border-[#3A0F34]"
                   required
+                  style={{ ...inputStyle, fontVariantNumeric: "tabular-nums" }}
                 />
               </div>
-
               <div>
-                <label className="block font-mono text-xs text-[#5E4B5B] uppercase font-bold mb-1">
-                  Email (Optional)
-                </label>
+                <label style={labelStyle}>Email (Optional)</label>
                 <input
                   type="email"
                   value={inquirerEmail}
                   onChange={(e) => setInquirerEmail(e.target.value)}
                   placeholder="ramesh@gmail.com"
-                  className="w-full rounded border border-[#C3CDD6] bg-[#DDE3E8]/30 px-3 py-2 font-mono text-xs text-[#1E081B] placeholder-[#5E4B5B] outline-none focus:border-[#3A0F34]"
+                  style={inputStyle}
                 />
               </div>
             </div>
 
             <div>
-              <label className="block font-mono text-xs text-[#5E4B5B] uppercase font-bold mb-1">
-                Enquiry Category
-              </label>
+              <label style={labelStyle}>Enquiry Category</label>
               <select
                 value={enquiryType}
                 onChange={(e) =>
                   setEnquiryType(e.target.value as "admission" | "course_fee" | "general_availability")
                 }
-                className="w-full rounded border border-[#C3CDD6] bg-[#DDE3E8]/30 px-3 py-2 font-mono text-xs text-[#1E081B] outline-none focus:border-[#3A0F34]"
+                style={inputStyle}
               >
                 {listing.vertical === "education" ? (
                   <>
-                    <option value="admission">Direct Admission Request</option>
-                    <option value="course_fee">Course Fee & Schedule Query</option>
-                    <option value="general_availability">Campus Facilities / Hostel Availability</option>
+                    <option value="admission">Admissions &amp; Eligibility Criteria</option>
+                    <option value="course_fee">Course Fees &amp; Scholarship Structure</option>
+                    <option value="general_availability">Campus Visit &amp; Hostel Enquiry</option>
                   </>
                 ) : (
                   <>
                     <option value="general_availability">Product / Service Availability</option>
-                    <option value="course_fee">Pricing & Discount Inquiry</option>
+                    <option value="course_fee">Price Quote / Student Offer Verification</option>
+                    <option value="admission">Operating Hours &amp; Booking Details</option>
                   </>
                 )}
               </select>
             </div>
 
             <div>
-              <label className="block font-mono text-xs text-[#5E4B5B] uppercase font-bold mb-1">
-                Message & Specific Requirements *
-              </label>
+              <label style={labelStyle}>Message &amp; Specific Requirements *</label>
               <textarea
+                rows={3}
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
-                rows={3}
                 placeholder="Mention specific course, seats, requirements, or timing..."
-                className="w-full rounded border border-[#C3CDD6] bg-[#DDE3E8]/30 px-3 py-2 font-mono text-xs text-[#1E081B] placeholder-[#5E4B5B] outline-none focus:border-[#3A0F34]"
                 required
+                style={{ ...inputStyle, resize: "none", fontFamily: "var(--font-sans)", fontSize: "13px" }}
               />
             </div>
 
-            <div className="flex justify-end gap-2 pt-2 border-t border-[#C3CDD6]">
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "flex-end",
+                gap: "10px",
+                paddingTop: "16px",
+                borderTop: "1px solid #D8D3C8",
+              }}
+            >
               <button
                 type="button"
                 onClick={onClose}
-                className="rounded border border-[#C3CDD6] px-4 py-2 font-mono text-xs uppercase font-semibold text-[#5E4B5B] hover:bg-[#DDE3E8] hover:text-[#1E081B] transition-colors"
+                className="pressable"
+                style={{
+                  padding: "8px 16px",
+                  border: "1px solid #D8D3C8",
+                  borderRadius: "6px",
+                  background: "#EAE6DF",
+                  fontFamily: "var(--font-mono)",
+                  fontSize: "11px",
+                  fontWeight: 600,
+                  letterSpacing: "0.04em",
+                  textTransform: "uppercase",
+                  color: "#575551",
+                  cursor: "pointer",
+                }}
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="flex items-center gap-1.5 rounded bg-[#3A0F34] px-4 py-2 font-mono text-xs font-bold uppercase text-[#F8FAFC] hover:bg-[#240820] shadow-xs disabled:opacity-50 transition-colors"
+                className="pressable"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  padding: "8px 20px",
+                  border: "none",
+                  borderRadius: "6px",
+                  background: isSubmitting ? "#575551" : "#FF4F17",
+                  fontFamily: "var(--font-mono)",
+                  fontSize: "11px",
+                  fontWeight: 700,
+                  letterSpacing: "0.04em",
+                  textTransform: "uppercase",
+                  color: "#FFFFFF",
+                  cursor: isSubmitting ? "not-allowed" : "pointer",
+                  opacity: isSubmitting ? 0.7 : 1,
+                }}
               >
-                <Send className="h-3.5 w-3.5" strokeWidth={1.75} />
-                <span>{isSubmitting ? "Sending..." : "Submit Lead"}</span>
+                <Send className="h-3.5 w-3.5" strokeWidth={2} />
+                <span>{isSubmitting ? "Submitting..." : "Submit Enquiry"}</span>
               </button>
             </div>
           </form>

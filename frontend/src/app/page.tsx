@@ -6,19 +6,21 @@ import Image from "next/image";
 import { useTown } from "@/components/TownContext";
 import { EnquiryModal } from "@/components/EnquiryModal";
 import { ReportModal } from "@/components/ReportModal";
-import { getCoverImage, getMonogram } from "@/lib/covers";
+import {
+  getCoverImage,
+  getMonogram,
+  getListingMetadataChips,
+  GEOMETRIC_FALLBACK_SVG,
+} from "@/lib/covers";
 import {
   Search,
   CheckCircle2,
-  AlertTriangle,
   Building2,
   GraduationCap,
   Calendar,
   ExternalLink,
   MessageSquare,
   Phone,
-  FileText,
-  AlertCircle,
   Flag,
   Tag,
   ShieldCheck,
@@ -27,6 +29,14 @@ import {
   Sparkles,
   ArrowRight,
   TrendingUp,
+  Share2,
+  X,
+  FileCheck2,
+  BookOpen,
+  Briefcase,
+  Layers,
+  ChevronRight,
+  AlertCircle,
 } from "lucide-react";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8080/api/v1";
@@ -71,7 +81,13 @@ type NewsItem = {
 type StudentOpportunity = {
   id: string;
   city: string;
-  opportunity_type: "internship" | "scholarship" | "hackathon" | "admission_drive" | "student_hostel" | "student_discount";
+  opportunity_type:
+    | "internship"
+    | "scholarship"
+    | "hackathon"
+    | "admission_drive"
+    | "student_hostel"
+    | "student_discount";
   title: string;
   slug: string;
   provider_name: string;
@@ -84,6 +100,254 @@ type StudentOpportunity = {
   stipend_amount: string | null;
   created_at: string;
 };
+
+/**
+ * Embedded SVG: Civic Development & Verification Pipeline
+ * Visualizing how citizen/town proposals move from Submitted -> Source Audited -> Confirmed Fact
+ * and listings move from Unverified -> Owner Claimed -> Details Reviewed
+ */
+function CivicPipelineDiagram() {
+  return (
+    <div
+      className="p-4 rounded-xl border border-[#D8D3C8] bg-white space-y-3"
+      style={{ boxShadow: "0 1px 3px rgba(17,17,16,0.04)" }}
+    >
+      <div className="flex items-center justify-between border-b border-[#D8D3C8] pb-2">
+        <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-[#111110]">
+          Civic Audit &amp; Verification Pipeline
+        </span>
+        <span className="font-mono text-[9px] text-[#0D6847] font-bold uppercase">
+          Autonomous Protocol
+        </span>
+      </div>
+
+      <svg
+        viewBox="0 0 480 90"
+        className="w-full h-auto"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        {/* Step 1 */}
+        <rect x="4" y="10" width="130" height="70" rx="6" fill="#F4F2EE" stroke="#D8D3C8" strokeWidth="1" />
+        <text x="14" y="30" fill="#8B877F" fontSize="9" fontFamily="JetBrains Mono" fontWeight="700">PHASE 01</text>
+        <text x="14" y="48" fill="#111110" fontSize="11" fontFamily="Plus Jakarta Sans" fontWeight="700">Civic Submission</text>
+        <text x="14" y="65" fill="#575551" fontSize="9" fontFamily="JetBrains Mono">Owner / Citizen File</text>
+
+        {/* Arrow 1 */}
+        <path d="M142 45 H166 M162 40 L168 45 L162 50" stroke="#FF4F17" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+
+        {/* Step 2 */}
+        <rect x="174" y="10" width="130" height="70" rx="6" fill="#F4F2EE" stroke="#D8D3C8" strokeWidth="1" />
+        <text x="184" y="30" fill="#8B877F" fontSize="9" fontFamily="JetBrains Mono" fontWeight="700">PHASE 02</text>
+        <text x="184" y="48" fill="#111110" fontSize="11" fontFamily="Plus Jakarta Sans" fontWeight="700">Evidence Audit</text>
+        <text x="184" y="65" fill="#575551" fontSize="9" fontFamily="JetBrains Mono">Cross-Source Verified</text>
+
+        {/* Arrow 2 */}
+        <path d="M312 45 H336 M332 40 L338 45 L332 50" stroke="#0D6847" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+
+        {/* Step 3 */}
+        <rect x="344" y="10" width="132" height="70" rx="6" fill="#ECFDF5" stroke="#0D6847" strokeWidth="1" />
+        <text x="354" y="30" fill="#0D6847" fontSize="9" fontFamily="JetBrains Mono" fontWeight="700">PHASE 03</text>
+        <text x="354" y="48" fill="#0D6847" fontSize="11" fontFamily="Plus Jakarta Sans" fontWeight="800">Confirmed Fact</text>
+        <text x="354" y="65" fill="#0D6847" fontSize="9" fontFamily="JetBrains Mono">Sealed &amp; Indexed</text>
+      </svg>
+    </div>
+  );
+}
+
+/**
+ * Visual Listing Card: 130px Cover Header, Scrim,
+ * Monogram Avatar, Structured Metadata Chips & Perforated Offer Pass
+ */
+function VisualListingCard({
+  item,
+  onEnquire,
+  onReport,
+  onRecordClick,
+  onCopyLink,
+}: {
+  item: ListingItem;
+  onEnquire: (item: ListingItem) => void;
+  onReport: (item: ListingItem) => void;
+  onRecordClick: (id: string, type: "whatsapp" | "call") => void;
+  onCopyLink: (slug: string) => void;
+}) {
+  const initialCover = getCoverImage(item.category_name, item.name);
+  const [coverUrl, setCoverUrl] = useState(initialCover);
+  const monogram = getMonogram(item.name);
+  const metadataChips = getListingMetadataChips(item.vertical, item.category_name, item.name);
+
+  return (
+    <div
+      className="bg-white rounded-2xl border border-[#D8D3C8] hover:border-[#111110] transition-all duration-200 overflow-hidden flex flex-col justify-between group hover:-translate-y-0.5"
+      style={{
+        boxShadow: "0 1px 3px rgba(17,17,16,0.04), 0 4px 12px rgba(17,17,16,0.04)",
+      }}
+    >
+      <div>
+        {/* 130px Visual Cover Header */}
+        <div className="relative h-[130px] w-full overflow-hidden bg-[#111110]">
+          <Image
+            src={coverUrl}
+            alt={item.name}
+            fill
+            unoptimized={coverUrl.endsWith(".svg")}
+            sizes="(max-width: 768px) 100vw, 420px"
+            className="object-cover group-hover:scale-[1.03] transition-transform duration-300"
+            onError={() => setCoverUrl(GEOMETRIC_FALLBACK_SVG)}
+          />
+
+          {/* Dark bottom gradient scrim */}
+          <div className="absolute inset-0 bg-gradient-to-t from-[#111110]/95 via-[#111110]/40 to-transparent" />
+
+          {/* Top-left floating pill: Category tag */}
+          <div className="absolute top-2.5 left-2.5 z-10">
+            <span className="bg-black/60 backdrop-blur-md text-white text-[10px] font-mono uppercase px-2.5 py-1 rounded-md border border-white/10 tracking-wider">
+              {item.category_name}
+            </span>
+          </div>
+
+          {/* Top-right floating pills: Sponsored & Verification badges */}
+          <div className="absolute top-2.5 right-2.5 z-10 flex items-center gap-1.5">
+            {item.is_sponsored && (
+              <span className="bg-[#D97706] text-white font-bold text-[9px] font-mono uppercase px-2 py-0.5 rounded-md shadow-xs">
+                SPONSORED
+              </span>
+            )}
+            {item.verification_status === "details_reviewed" && (
+              <span className="bg-[#0D6847] text-white text-[9px] font-mono font-bold uppercase px-2 py-0.5 rounded-md shadow-xs flex items-center gap-1">
+                <CheckCircle2 className="h-2.5 w-2.5" strokeWidth={2.5} />
+                DETAILS REVIEWED
+              </span>
+            )}
+            {item.verification_status === "owner_claimed" && (
+              <span className="bg-[#111110] text-[#D97706] border border-[#D97706]/40 text-[9px] font-mono font-bold uppercase px-2 py-0.5 rounded-md shadow-xs flex items-center gap-1">
+                <ShieldCheck className="h-2.5 w-2.5" strokeWidth={2} />
+                OWNER CLAIMED
+              </span>
+            )}
+            {item.verification_status === "not_verified" && (
+              <span className="bg-neutral-900/80 text-neutral-300 text-[9px] font-mono uppercase px-2 py-0.5 rounded-md">
+                UNVERIFIED
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Card Body with Overlapping Monogram Avatar */}
+        <div className="px-5 pt-0 pb-4 relative z-20">
+          {/* Overlapping Monogram along bottom edge of cover */}
+          <div className="-mt-6 mb-3 flex items-center justify-between">
+            <div
+              className="h-11 w-11 rounded-xl bg-[#111110] text-[#F4F2EE] border-2 border-white font-bold font-serif text-lg shadow-md flex items-center justify-center shrink-0 relative z-20"
+              title={item.name}
+            >
+              {monogram}
+            </div>
+            <button
+              onClick={() => onCopyLink(item.slug)}
+              className="rounded-lg p-1.5 text-[#575551] hover:bg-[#EAE6DF] hover:text-[#111110] transition-colors pressable"
+              title="Copy Listing Canonical Link"
+            >
+              <Share2 className="h-3.5 w-3.5" strokeWidth={1.75} />
+            </button>
+          </div>
+
+          {/* Title & Canonical Link */}
+          <h4 className="text-base font-bold text-[#111110] group-hover:text-[#FF4F17] transition-colors tracking-tight line-clamp-1 font-mono">
+            <Link href={`/listings/${item.slug}`}>{item.name}</Link>
+          </h4>
+
+          {/* Locality Pin + Address */}
+          <div className="flex items-center gap-1.5 font-mono text-xs text-[#575551] mt-1">
+            <MapPin className="h-3.5 w-3.5 text-[#FF4F17] shrink-0" strokeWidth={1.75} />
+            <span className="truncate">
+              {item.locality}, {item.city}
+            </span>
+          </div>
+
+          {/* 2-Line Description */}
+          <p className="mt-2 text-xs text-[#575551] line-clamp-2 leading-relaxed">
+            {item.tagline || `${item.category_name} located at ${item.address || item.locality}.`}
+          </p>
+
+          {/* Structured Metadata Chips */}
+          <div className="flex flex-wrap gap-1.5 mt-3">
+            {metadataChips.map((chip, idx) => (
+              <span
+                key={idx}
+                className="bg-[#EAE6DF] text-[#111110] text-[11px] font-medium px-2 py-0.5 rounded font-mono"
+              >
+                {chip}
+              </span>
+            ))}
+          </div>
+
+          {/* Ticket-Style Student / Local Offer Strip */}
+          <div className="mt-3.5 offer-ticket">
+            <div className="flex items-center gap-1.5 min-w-0 pr-2">
+              <Tag className="h-3.5 w-3.5 text-[#D97706] shrink-0" strokeWidth={2} />
+              <span className="font-bold text-[#111110] text-[11px] truncate">
+                {item.vertical === "education"
+                  ? "Admissions Open 2026-27"
+                  : "Student & Local Pass Verified"}
+              </span>
+            </div>
+            <span className="text-[10px] text-[#0D6847] font-bold uppercase shrink-0 font-mono-numbers">
+              Direct Lead
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Card Footer */}
+      <div className="px-5 py-3 bg-[#F4F2EE] border-t border-[#D8D3C8] flex items-center justify-between gap-2">
+        <div className="flex items-center gap-1.5">
+          {item.whatsapp && (
+            <a
+              href={`https://wa.me/${item.whatsapp.replace(/[^0-9]/g, "")}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => onRecordClick(item.id, "whatsapp")}
+              className="border border-[#D8D3C8] hover:border-[#111110] bg-white rounded-lg px-2.5 py-1.5 text-xs font-semibold text-[#111110] flex items-center gap-1.5 transition-colors pressable"
+              title="WhatsApp Direct Routing"
+            >
+              <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+              <MessageSquare className="h-3.5 w-3.5 text-emerald-600 shrink-0" strokeWidth={2} />
+              <span className="hidden sm:inline">WhatsApp</span>
+            </a>
+          )}
+          {item.phone && (
+            <a
+              href={`tel:${item.phone}`}
+              onClick={() => onRecordClick(item.id, "call")}
+              className="border border-[#D8D3C8] hover:border-[#111110] bg-white rounded-lg px-2.5 py-1.5 text-xs font-semibold text-[#111110] flex items-center gap-1.5 transition-colors pressable"
+              title="Telephone Helpline"
+            >
+              <Phone className="h-3.5 w-3.5 text-[#111110] shrink-0" strokeWidth={2} />
+              <span className="hidden sm:inline">Call</span>
+            </a>
+          )}
+          <button
+            onClick={() => onReport(item)}
+            className="p-1.5 text-[#8B877F] hover:text-[#FF4F17] hover:bg-white rounded-lg transition-colors pressable"
+            title="Report inaccurate details"
+          >
+            <Flag className="h-3.5 w-3.5" strokeWidth={1.75} />
+          </button>
+        </div>
+
+        <button
+          onClick={() => onEnquire(item)}
+          className="bg-[#FF4F17] hover:bg-[#e03d07] text-white text-xs font-bold px-3.5 py-2 rounded-lg flex items-center gap-1.5 shadow-xs transition-all pressable font-mono uppercase"
+        >
+          <span>Enquire / Apply</span>
+          <ArrowRight className="h-3.5 w-3.5" strokeWidth={2} />
+        </button>
+      </div>
+    </div>
+  );
+}
 
 export default function DiscoveryHub() {
   const { town } = useTown();
@@ -101,6 +365,16 @@ export default function DiscoveryHub() {
   // Modals state
   const [enquiryListing, setEnquiryListing] = useState<ListingItem | null>(null);
   const [reportListing, setReportListing] = useState<ListingItem | null>(null);
+
+  // Toast Notification State
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  const showToast = useCallback((msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => {
+      setToastMessage(null);
+    }, 2400);
+  }, []);
 
   const fetchData = useCallback(async () => {
     setIsLoading(true);
@@ -138,7 +412,7 @@ export default function DiscoveryHub() {
   useEffect(() => {
     const timer = setTimeout(() => {
       fetchData();
-    }, 200);
+    }, 180);
     return () => clearTimeout(timer);
   }, [fetchData]);
 
@@ -149,9 +423,16 @@ export default function DiscoveryHub() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ listing_id: listingId, click_type: clickType }),
       });
+      showToast(clickType === "whatsapp" ? "Opening verified WhatsApp link..." : "Calling provider telephone...");
     } catch (e) {
       console.error("Telemetry error:", e);
     }
+  };
+
+  const copyListingLink = (slug: string) => {
+    const url = `${window.location.origin}/listings/${slug}`;
+    navigator.clipboard?.writeText(url);
+    showToast("Listing link copied to clipboard");
   };
 
   // Localities list for dropdown
@@ -183,86 +464,100 @@ export default function DiscoveryHub() {
   const topOpp = studentOpps[0];
 
   return (
-    <div className="min-h-screen bg-[#DDE3E8]">
-      {/* 1. ARCHITECTURAL 2-COLUMN SPLIT HERO SECTION */}
-      <section className="relative overflow-hidden hero-radial-plum text-white pt-10 pb-16 px-4 sm:px-6 lg:px-8 border-b border-[#C3CDD6]/30 shadow-md">
-        {/* Subtle Ambient Gold Glow */}
-        <div className="absolute top-0 right-0 w-96 h-96 hero-ambient-glow pointer-events-none" />
+    <div style={{ backgroundColor: "#F4F2EE", minHeight: "100vh" }}>
+      {/* Toast Notification */}
+      {toastMessage && (
+        <div className="fixed bottom-6 right-6 z-50 animate-modal-enter">
+          <div className="bg-[#111110] text-[#F4F2EE] border border-[#D8D3C8]/40 px-4 py-2.5 rounded-lg font-mono text-xs flex items-center gap-2 shadow-lg">
+            <span className="h-2 w-2 rounded-full bg-[#FF4F17]" />
+            <span>{toastMessage}</span>
+          </div>
+        </div>
+      )}
 
+      {/* 1. ARCHITECTURAL 2-COLUMN SPLIT HERO SECTION (NO GRAPH GRID LINES) */}
+      <section
+        className="relative overflow-hidden pt-10 pb-14 px-4 sm:px-6 lg:px-8 border-b border-[#D8D3C8]"
+        style={{
+          background: "linear-gradient(135deg, #111110 0%, #1A1A18 60%, #242422 100%)",
+          color: "#F4F2EE",
+        }}
+      >
         <div className="mx-auto max-w-7xl">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
             {/* Left Column (7 cols): Editorial Headline & Floating Search Command */}
             <div className="lg:col-span-7 space-y-6">
               {/* Region Pill */}
               <div className="inline-flex items-center gap-2 rounded-full bg-white/10 border border-white/15 px-3.5 py-1 backdrop-blur-md">
-                <span className="h-2 w-2 rounded-full bg-[#EAAA00] animate-pulse" />
-                <span className="font-mono text-[11px] font-bold uppercase tracking-wider text-[#F8FAFC]">
-                  KUPPAM & NELLORE HYPERLOCAL NETWORK
+                <span className="h-2 w-2 rounded-full bg-[#FF4F17] animate-pulse shrink-0" />
+                <span className="font-mono text-[11px] font-bold uppercase tracking-wider text-white">
+                  KUPPAM &amp; NELLORE HYPERLOCAL NETWORK
                 </span>
-                <span className="font-mono text-[10px] text-[#EAAA00] font-semibold uppercase">
-                  Verified Local Hub
+                <span className="font-mono text-[10px] text-[#FF4F17] font-semibold uppercase">
+                  VERIFIED DIRECTORY
                 </span>
               </div>
 
-              {/* High-Impact Headline (Must contain "OneTownCity — Nellore" for E2E tests) */}
+              {/* High-Impact Headline with Tighter Tracking */}
               <div>
-                <h1 className="text-4xl sm:text-5xl lg:text-5xl font-extrabold tracking-tight text-white leading-tight uppercase font-mono">
-                  OneTownCity — <span className="text-[#EAAA00]">{town}</span>
+                <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-white leading-tight font-serif">
+                  The verified academic, civic &amp; commercial index for{" "}
+                  <span style={{ color: "#FF4F17" }}>{town}</span>.
                 </h1>
-                <p className="mt-3 text-sm sm:text-base text-[#DDE3E8]/85 max-w-xl leading-relaxed">
-                  Verified higher education institutes, structured course admissions, real-time civic tracker,
+                <p className="mt-3 text-sm sm:text-base text-neutral-300 max-w-[65ch] leading-relaxed font-sans">
+                  Higher education institutes, structured course admissions, real-time civic tracker,
                   safe student hostels, and authenticated local storefronts.
                 </p>
               </div>
 
               {/* Segmented Floating Command Search Bar */}
-              <div className="max-w-2xl rounded-2xl bg-[#F8FAFC] p-2 ring-4 ring-white/10 shadow-2xl border border-[#C3CDD6]">
+              <div className="max-w-2xl rounded-xl bg-white p-2 shadow-lg border border-[#D8D3C8]">
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                   {/* Segment 1: Search Input with Icon */}
-                  <div className="flex-1 flex items-center gap-2 px-3 py-1">
-                    <Search className="h-4 w-4 text-[#5E4B5B] shrink-0" strokeWidth={2} />
+                  <div className="flex-1 flex items-center gap-2.5 px-3 py-1">
+                    <Search className="h-4 w-4 text-[#8B877F] shrink-0" strokeWidth={2} />
                     <input
                       type="text"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       placeholder={`Search colleges, courses, cafes, scholarships in ${town}...`}
-                      className="w-full bg-transparent font-sans text-xs text-[#1E081B] placeholder-[#5E4B5B] outline-none"
+                      className="w-full bg-transparent font-sans text-xs text-[#111110] placeholder-[#8B877F] outline-none"
                     />
                     {searchQuery && (
                       <button
                         onClick={() => setSearchQuery("")}
-                        className="font-mono text-[10px] text-[#5E4B5B] hover:text-[#1E081B] uppercase px-1.5 py-0.5 rounded bg-[#DDE3E8]"
+                        className="font-mono text-[10px] text-[#575551] hover:text-[#111110] uppercase px-1.5 py-0.5 rounded-md bg-[#EAE6DF] pressable"
                       >
-                        Clear
+                        <X className="h-3 w-3" />
                       </button>
                     )}
                   </div>
 
-                  <div className="hidden sm:block h-7 w-[1px] bg-[#C3CDD6]" />
+                  <div className="hidden sm:block h-7 w-[1px] bg-[#D8D3C8]" />
 
                   {/* Segment 2: Locality Selector Dropdown */}
-                  <div className="flex items-center gap-1.5 px-3 py-1 text-xs text-[#1E081B]">
-                    <MapPin className="h-3.5 w-3.5 text-[#3A0F34] shrink-0" strokeWidth={1.75} />
+                  <div className="flex items-center gap-1.5 px-3 py-1 text-xs text-[#111110]">
+                    <MapPin className="h-3.5 w-3.5 text-[#FF4F17] shrink-0" strokeWidth={1.75} />
                     <select
                       value={selectedLocality}
                       onChange={(e) => setSelectedLocality(e.target.value)}
-                      className="bg-transparent font-mono text-xs font-semibold text-[#1E081B] outline-none cursor-pointer max-w-[130px] truncate"
+                      className="bg-transparent font-mono text-xs font-semibold text-[#111110] outline-none cursor-pointer max-w-[130px] truncate"
                     >
-                      <option value="all" className="bg-[#F8FAFC] text-[#1E081B]">
+                      <option value="all" className="bg-white text-[#111110]">
                         All Localities
                       </option>
                       {localities.map((loc) => (
-                        <option key={loc} value={loc} className="bg-[#F8FAFC] text-[#1E081B]">
+                        <option key={loc} value={loc} className="bg-white text-[#111110]">
                           {loc}
                         </option>
                       ))}
                     </select>
                   </div>
 
-                  {/* Segment 3: Bold Gold Button */}
+                  {/* Segment 3: Signal Vermilion Button with Tactile Feedback */}
                   <button
                     onClick={() => fetchData()}
-                    className="rounded-xl bg-[#EAAA00] hover:bg-[#ffc02e] text-[#240820] font-bold text-xs uppercase px-5 py-2.5 transition-all shadow-md flex items-center justify-center gap-1.5 shrink-0"
+                    className="text-white font-bold px-6 py-3 rounded-lg bg-[#FF4F17] hover:bg-[#e03d07] transition flex items-center justify-center gap-1.5 shrink-0 pressable font-mono text-xs uppercase shadow-sm"
                   >
                     <span>Search</span>
                     <ArrowRight className="h-3.5 w-3.5" strokeWidth={2.5} />
@@ -272,7 +567,7 @@ export default function DiscoveryHub() {
 
               {/* Quick Trending Chips */}
               <div className="flex flex-wrap items-center gap-2 pt-1">
-                <span className="text-xs font-mono text-[#EAAA00] font-semibold flex items-center gap-1">
+                <span className="text-xs font-mono text-[#FF4F17] font-semibold flex items-center gap-1">
                   <TrendingUp className="h-3.5 w-3.5" strokeWidth={2} />
                   <span>Trending:</span>
                 </span>
@@ -289,7 +584,7 @@ export default function DiscoveryHub() {
                       setActiveTab(chip.tab);
                       setSearchQuery(chip.q);
                     }}
-                    className="rounded-full bg-white/10 hover:bg-white/20 border border-white/15 px-3 py-1 text-xs text-white transition-all backdrop-blur-xs font-sans hover:scale-105 active:scale-95"
+                    className="bg-white/10 hover:bg-white/20 text-white text-xs rounded-full border border-white/15 px-3 py-1 transition-all backdrop-blur-xs font-sans pressable-subtle"
                   >
                     {chip.label}
                   </button>
@@ -297,52 +592,52 @@ export default function DiscoveryHub() {
               </div>
             </div>
 
-            {/* Right Column (5 cols): Floating "Town Pulse" Bento Preview */}
+            {/* Right Column (5 cols) — Floating "Town Pulse" Bento Preview */}
             <div className="lg:col-span-5">
-              <div className="rounded-3xl bg-white/10 backdrop-blur-md border border-white/20 p-6 text-white shadow-2xl space-y-5">
+              <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-5 text-white shadow-xl space-y-4">
                 {/* Header with Live Telemetry */}
-                <div className="flex items-center justify-between border-b border-white/15 pb-4">
+                <div className="flex items-center justify-between border-b border-white/15 pb-3">
                   <div className="flex items-center gap-2">
-                    <Sparkles className="h-4 w-4 text-[#EAAA00]" strokeWidth={2} />
+                    <Sparkles className="h-4 w-4 text-[#FF4F17]" strokeWidth={2} />
                     <span className="font-mono text-xs font-bold uppercase tracking-wider text-white">
                       Live Town Telemetry
                     </span>
                   </div>
-                  <span className="font-mono text-[10px] text-[#EAAA00] bg-[#240820] border border-[#EAAA00]/40 px-2 py-0.5 rounded-full font-bold">
+                  <span className="font-mono text-[10px] text-[#FF4F17] bg-white/10 border border-[#FF4F17]/40 px-2 py-0.5 rounded-full font-bold">
                     {town} Live
                   </span>
                 </div>
 
-                {/* 3 Metric Pills */}
+                {/* Live Town Telemetry Counters */}
                 <div className="grid grid-cols-3 gap-2 text-center font-mono">
-                  <div className="rounded-xl bg-black/25 p-2.5 border border-white/10">
-                    <div className="text-lg font-bold text-white font-mono-numbers">30+</div>
+                  <div className="rounded-xl bg-black/40 p-2.5 border border-white/10">
+                    <div className="text-base sm:text-lg font-bold text-white font-mono-numbers">30+</div>
                     <div className="text-[10px] text-white/70 uppercase">Active Listings</div>
                   </div>
-                  <div className="rounded-xl bg-black/25 p-2.5 border border-white/10">
-                    <div className="text-lg font-bold text-[#EAAA00] font-mono-numbers">100%</div>
+                  <div className="rounded-xl bg-black/40 p-2.5 border border-white/10">
+                    <div className="text-base sm:text-lg font-bold text-[#0D6847] font-mono-numbers">100%</div>
                     <div className="text-[10px] text-white/70 uppercase">Reviewed Facts</div>
                   </div>
-                  <div className="rounded-xl bg-black/25 p-2.5 border border-white/10">
-                    <div className="text-lg font-bold text-emerald-400 font-mono-numbers">Instant</div>
-                    <div className="text-[10px] text-white/70 uppercase">Direct Leads</div>
+                  <div className="rounded-xl bg-black/40 p-2.5 border border-white/10">
+                    <div className="text-base sm:text-lg font-bold text-[#FF4F17] font-mono-numbers">Direct</div>
+                    <div className="text-[10px] text-white/70 uppercase">Lead Routing</div>
                   </div>
                 </div>
 
-                {/* Top Civic Headline Preview */}
+                {/* Top Civic / Campus Headline */}
                 {topNews && (
-                  <div className="rounded-xl bg-black/30 border border-white/10 p-3.5 space-y-1.5">
+                  <div className="rounded-xl bg-black/40 border border-white/10 p-3 space-y-1.5 transition-colors hover:bg-black/50">
                     <div className="flex items-center justify-between gap-2">
-                      <span className="font-mono text-[10px] text-[#EAAA00] uppercase font-bold">
-                        Top Civic Pulse
+                      <span className="font-mono text-[10px] text-[#FF4F17] uppercase font-bold">
+                        Top Civic Headline
                       </span>
                       {topNews.is_confirmed_fact ? (
-                        <span className="inline-flex items-center gap-1 rounded bg-[#0D6E52] px-2 py-0.5 font-mono text-[9px] font-bold text-white uppercase">
-                          <CheckCircle2 className="h-2.5 w-2.5" strokeWidth={2} />
+                        <span className="inline-flex items-center gap-1 rounded bg-[#0D6847] px-2 py-0.5 font-mono text-[9px] font-bold text-white uppercase">
+                          <CheckCircle2 className="h-2.5 w-2.5" strokeWidth={2.5} />
                           Confirmed Fact
                         </span>
                       ) : (
-                        <span className="rounded bg-[#EAAA00] px-2 py-0.5 font-mono text-[9px] font-bold text-[#240820] uppercase">
+                        <span className="rounded bg-[#D97706] px-2 py-0.5 font-mono text-[9px] font-bold text-white uppercase">
                           Proposal
                         </span>
                       )}
@@ -353,18 +648,27 @@ export default function DiscoveryHub() {
                     <p className="font-sans text-[11px] text-white/70 line-clamp-2">
                       {topNews.content}
                     </p>
+                    <div className="pt-1 flex items-center justify-end">
+                      <button
+                        onClick={() => setActiveTab("news")}
+                        className="text-[10px] text-[#FF4F17] hover:underline font-mono font-bold flex items-center gap-1 pressable"
+                      >
+                        <span>Jump to Pulse</span>
+                        <ArrowRight className="h-3 w-3" />
+                      </button>
+                    </div>
                   </div>
                 )}
 
-                {/* Featured Student Opportunity Preview */}
+                {/* Featured Student Opportunity */}
                 {topOpp && (
-                  <div className="rounded-xl bg-black/30 border border-white/10 p-3.5 space-y-1.5">
+                  <div className="rounded-xl bg-black/40 border border-white/10 p-3 space-y-1.5 transition-colors hover:bg-black/50">
                     <div className="flex items-center justify-between gap-2">
-                      <span className="font-mono text-[10px] text-[#EAAA00] uppercase font-bold">
+                      <span className="font-mono text-[10px] text-[#FF4F17] uppercase font-bold">
                         Featured Opportunity
                       </span>
                       {topOpp.stipend_amount && (
-                        <span className="rounded bg-[#EAAA00] text-[#240820] font-mono font-bold text-[9px] px-2 py-0.5">
+                        <span className="rounded bg-[#FF4F17] text-white font-mono font-bold text-[9px] px-2 py-0.5 font-mono-numbers">
                           {topOpp.stipend_amount}
                         </span>
                       )}
@@ -373,14 +677,14 @@ export default function DiscoveryHub() {
                       {topOpp.title}
                     </h4>
                     <div className="flex items-center justify-between pt-1">
-                      <span className="text-[10px] text-white/60 font-mono">
+                      <span className="text-[10px] text-white/60 font-mono truncate max-w-[170px]">
                         By {topOpp.provider_name}
                       </span>
                       <button
                         onClick={() => setActiveTab("students")}
-                        className="text-[10px] text-[#EAAA00] hover:underline font-mono font-bold flex items-center gap-1"
+                        className="text-[10px] text-[#FF4F17] hover:underline font-mono font-bold flex items-center gap-1 pressable shrink-0"
                       >
-                        <span>View Opportunity</span>
+                        <span>Apply / View</span>
                         <ArrowRight className="h-3 w-3" />
                       </button>
                     </div>
@@ -392,28 +696,28 @@ export default function DiscoveryHub() {
         </div>
       </section>
 
-      {/* 2. MAIN CONTENT AREA ON COOL ALABASTER CANVAS */}
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-        {/* Floating Segmented Ribbon Filter Bar */}
-        <div className="rounded-2xl bg-[#F8FAFC] p-2 border border-[#C3CDD6] shadow-sm flex flex-wrap items-center justify-between gap-3">
+      {/* 2. MULTI-SECTION PORTAL MAIN CONTAINER */}
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8 space-y-8">
+        {/* Sticky Segmented Filter & Quick-Stats Bar */}
+        <div className="sticky top-16 z-30 bg-white p-2 rounded-xl border border-[#D8D3C8] shadow-sm flex flex-wrap items-center justify-between gap-4">
           {/* Vertical Switcher Tabs */}
-          <div className="flex flex-wrap items-center gap-1.5">
+          <div className="flex flex-wrap items-center gap-1">
             <button
               onClick={() => setActiveTab("all")}
-              className={`rounded-xl px-3.5 py-2 font-mono text-xs font-bold uppercase transition-all ${
+              className={`rounded-lg px-3 py-1.5 font-mono text-xs font-bold uppercase pressable ${
                 activeTab === "all"
-                  ? "bg-[#EAAA00] text-[#240820] shadow-sm"
-                  : "text-[#5E4B5B] hover:text-[#1E081B] hover:bg-[#DDE3E8]/60"
+                  ? "bg-[#111110] text-[#F4F2EE] shadow-xs"
+                  : "text-[#575551] hover:text-[#111110] hover:bg-[#EAE6DF]"
               }`}
             >
               All Verticals
             </button>
             <button
               onClick={() => setActiveTab("education")}
-              className={`flex items-center gap-1.5 rounded-xl px-3.5 py-2 font-mono text-xs font-bold uppercase transition-all ${
+              className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-mono text-xs font-bold uppercase pressable ${
                 activeTab === "education"
-                  ? "bg-[#EAAA00] text-[#240820] shadow-sm"
-                  : "text-[#5E4B5B] hover:text-[#1E081B] hover:bg-[#DDE3E8]/60"
+                  ? "bg-[#111110] text-[#F4F2EE] shadow-xs"
+                  : "text-[#575551] hover:text-[#111110] hover:bg-[#EAE6DF]"
               }`}
             >
               <GraduationCap className="h-3.5 w-3.5" strokeWidth={1.75} />
@@ -421,243 +725,255 @@ export default function DiscoveryHub() {
             </button>
             <button
               onClick={() => setActiveTab("students")}
-              className={`flex items-center gap-1.5 rounded-xl px-3.5 py-2 font-mono text-xs font-bold uppercase transition-all ${
+              className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-mono text-xs font-bold uppercase pressable ${
                 activeTab === "students"
-                  ? "bg-[#EAAA00] text-[#240820] shadow-sm"
-                  : "text-[#5E4B5B] hover:text-[#1E081B] hover:bg-[#DDE3E8]/60"
+                  ? "bg-[#111110] text-[#F4F2EE] shadow-xs"
+                  : "text-[#575551] hover:text-[#111110] hover:bg-[#EAE6DF]"
               }`}
             >
-              <Building2 className="h-3.5 w-3.5" strokeWidth={1.75} />
+              <BookOpen className="h-3.5 w-3.5" strokeWidth={1.75} />
               <span>Student Corner</span>
             </button>
             <button
               onClick={() => setActiveTab("news")}
-              className={`flex items-center gap-1.5 rounded-xl px-3.5 py-2 font-mono text-xs font-bold uppercase transition-all ${
+              className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-mono text-xs font-bold uppercase pressable ${
                 activeTab === "news"
-                  ? "bg-[#EAAA00] text-[#240820] shadow-sm"
-                  : "text-[#5E4B5B] hover:text-[#1E081B] hover:bg-[#DDE3E8]/60"
+                  ? "bg-[#111110] text-[#F4F2EE] shadow-xs"
+                  : "text-[#575551] hover:text-[#111110] hover:bg-[#EAE6DF]"
               }`}
             >
               <Calendar className="h-3.5 w-3.5" strokeWidth={1.75} />
-              <span>News & Town Pulse</span>
+              <span>News &amp; Town Pulse</span>
             </button>
             <button
               onClick={() => setActiveTab("business")}
-              className={`flex items-center gap-1.5 rounded-xl px-3.5 py-2 font-mono text-xs font-bold uppercase transition-all ${
+              className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-mono text-xs font-bold uppercase pressable ${
                 activeTab === "business"
-                  ? "bg-[#EAAA00] text-[#240820] shadow-sm"
-                  : "text-[#5E4B5B] hover:text-[#1E081B] hover:bg-[#DDE3E8]/60"
+                  ? "bg-[#111110] text-[#F4F2EE] shadow-xs"
+                  : "text-[#575551] hover:text-[#111110] hover:bg-[#EAE6DF]"
               }`}
             >
-              <FileText className="h-3.5 w-3.5" strokeWidth={1.75} />
+              <Building2 className="h-3.5 w-3.5" strokeWidth={1.75} />
               <span>Local Businesses</span>
             </button>
           </div>
 
-          {/* Quick Filter Toggles */}
+          {/* Instant Filter Toggles */}
           <div className="flex items-center gap-2">
             <button
               onClick={() => setFilterVerifiedOnly(!filterVerifiedOnly)}
-              className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 font-mono text-[11px] font-semibold transition-all border ${
+              className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-mono text-xs font-semibold uppercase border pressable ${
                 filterVerifiedOnly
-                  ? "bg-[#0D6E52] border-[#0D6E52] text-white shadow-xs"
-                  : "bg-white border-[#C3CDD6] text-[#5E4B5B] hover:border-[#3A0F34]"
+                  ? "bg-[#0D6847] text-white border-[#0D6847] shadow-xs"
+                  : "bg-transparent text-[#575551] border-[#D8D3C8] hover:bg-[#EAE6DF]"
               }`}
             >
-              <CheckCircle2 className="h-3 w-3" strokeWidth={2} />
+              <CheckCircle2 className="h-3.5 w-3.5" strokeWidth={2} />
               <span>Verified Only</span>
             </button>
 
             <button
               onClick={() => setFilterOffersOnly(!filterOffersOnly)}
-              className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 font-mono text-[11px] font-semibold transition-all border ${
+              className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-mono text-xs font-semibold uppercase border pressable ${
                 filterOffersOnly
-                  ? "bg-[#EAAA00] border-[#EAAA00] text-[#240820] font-bold shadow-xs"
-                  : "bg-white border-[#C3CDD6] text-[#5E4B5B] hover:border-[#3A0F34]"
+                  ? "bg-[#FF4F17] text-white border-[#FF4F17] shadow-xs font-bold"
+                  : "bg-transparent text-[#575551] border-[#D8D3C8] hover:bg-[#EAE6DF]"
               }`}
             >
-              <Tag className="h-3 w-3" strokeWidth={2} />
+              <Tag className="h-3.5 w-3.5" strokeWidth={1.75} />
               <span>Active Offers</span>
             </button>
           </div>
         </div>
 
-        {/* 3. MULTI-SECTION ASYMMETRIC GRID (ALL VERTICALS) */}
+        {/* 3. VIEW SWITCHER OR ASYMMETRIC MAIN GRID */}
         {activeTab === "all" ? (
+          /* ASYMMETRIC 8-COL DIRECTORY + 4-COL CIVIC SIDEBAR */
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-            {/* Left Main Column (8 cols): Featured Institutions & Businesses */}
+            {/* Main Listings Column (8 cols): Featured Institutions & Businesses Grid */}
             <div className="lg:col-span-8 space-y-6">
-              <div className="flex items-center justify-between border-b border-[#C3CDD6] pb-3">
-                <div className="flex items-center gap-2">
-                  <div className="h-4 w-1 bg-[#3A0F34] rounded-xs" />
-                  <h2 className="font-mono text-sm font-bold uppercase tracking-wider text-[#3A0F34]">
-                    Directory Listings ({filteredListings.length})
-                  </h2>
-                </div>
-                <span className="font-mono text-xs text-[#5E4B5B] uppercase font-semibold">
-                  Sorted by Verified Freshness
+              <div className="flex items-center justify-between pb-2 border-b border-[#D8D3C8]">
+                <h3 className="font-mono text-xs font-bold text-[#111110] uppercase tracking-wider flex items-center gap-2">
+                  <div className="h-3 w-1 bg-[#FF4F17] rounded-xs" />
+                  <span>Featured Institutions &amp; Local Businesses ({filteredListings.length})</span>
+                </h3>
+                <span className="font-mono text-[11px] text-[#575551] uppercase font-mono-numbers">
+                  Verified Directory Index
                 </span>
               </div>
 
               {isLoading ? (
-                <div className="py-16 text-center font-mono text-xs text-[#5E4B5B] uppercase">
-                  Loading verified directory records...
+                <div className="rounded-2xl border border-[#D8D3C8] bg-white p-12 text-center font-mono text-xs text-[#575551] uppercase">
+                  Loading verified entities in {town}...
                 </div>
               ) : filteredListings.length === 0 ? (
-                <div className="rounded-2xl border border-[#C3CDD6] bg-[#F8FAFC] py-16 text-center font-mono text-xs text-[#5E4B5B] uppercase shadow-sm">
-                  No matching listings found for this town query.
+                <div className="rounded-2xl border border-[#D8D3C8] bg-white p-12 text-center space-y-3">
+                  <p className="font-mono text-sm text-[#111110] font-bold uppercase">
+                    No matching verified entities found in {town}
+                  </p>
+                  <p className="font-mono text-xs text-[#575551]">
+                    Try clearing search filters or choosing a different locality.
+                  </p>
+                  <button
+                    onClick={() => {
+                      setSearchQuery("");
+                      setSelectedLocality("all");
+                      setFilterVerifiedOnly(false);
+                      setFilterOffersOnly(false);
+                    }}
+                    className="rounded-lg bg-[#111110] text-[#F4F2EE] font-mono text-xs px-4 py-2 uppercase hover:bg-[#242422] pressable"
+                  >
+                    Reset All Filters
+                  </button>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   {filteredListings.map((item) => (
-                    <ListingCard
+                    <VisualListingCard
                       key={item.id}
                       item={item}
-                      onEnquire={() => setEnquiryListing(item)}
-                      onReport={() => setReportListing(item)}
+                      onEnquire={(l) => setEnquiryListing(l)}
+                      onReport={(l) => setReportListing(l)}
                       onRecordClick={recordClick}
+                      onCopyLink={copyListingLink}
                     />
                   ))}
                 </div>
               )}
             </div>
 
-            {/* Right Sticky Sidebar (4 cols): Town Pulse + Student Corner */}
-            <div className="lg:col-span-4 space-y-6 lg:sticky lg:top-20">
+            {/* Right Sticky Sidebar (4 cols): Widget 1 & Widget 2 */}
+            <div className="lg:col-span-4 space-y-6 lg:sticky lg:top-32">
               {/* Widget 1: Live Town Pulse & Civic Tracker */}
-              <div className="rounded-2xl border border-[#C3CDD6] bg-[#F8FAFC] p-5 shadow-sm space-y-4">
-                <div className="flex items-center justify-between border-b border-[#C3CDD6] pb-3">
+              <div className="bg-white rounded-2xl border border-[#D8D3C8] p-5 space-y-4">
+                <div className="flex items-center justify-between border-b border-[#D8D3C8] pb-3">
                   <div className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4 text-[#3A0F34]" strokeWidth={1.75} />
-                    <h3 className="font-mono text-xs font-bold uppercase text-[#3A0F34] tracking-wider">
-                      Town Pulse & Civic Tracker
+                    <Calendar className="h-4 w-4 text-[#FF4F17]" strokeWidth={2} />
+                    <h3 className="font-mono text-xs font-bold text-[#111110] uppercase tracking-wide">
+                      Live Town Pulse &amp; Civic Tracker
                     </h3>
                   </div>
                   <button
                     onClick={() => setActiveTab("news")}
-                    className="font-mono text-[10px] text-[#3A0F34] hover:text-[#EAAA00] uppercase font-bold"
+                    className="font-mono text-[10px] text-[#FF4F17] hover:underline font-bold uppercase transition-colors pressable"
                   >
                     View All
                   </button>
                 </div>
 
-                <div className="space-y-3.5 divide-y divide-[#C3CDD6]/60">
-                  {newsItems.slice(0, 3).map((news) => (
-                    <div key={news.id} className="pt-3 first:pt-0 space-y-1.5">
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="font-mono text-[9px] uppercase px-1.5 py-0.5 rounded bg-[#DDE3E8] text-[#1E081B] font-bold">
-                          {news.item_type.replace(/_/g, " ")}
+                <div className="space-y-3">
+                  {newsItems.slice(0, 3).map((n) => (
+                    <div
+                      key={n.id}
+                      className="p-3.5 rounded-xl bg-[#F4F2EE] border border-[#D8D3C8] space-y-1.5 transition-all hover:border-[#111110] pressable-subtle"
+                    >
+                      <div className="flex items-center justify-between gap-1">
+                        <span className="font-mono text-[9px] uppercase font-bold text-[#575551]">
+                          {n.item_type.replace("_", " ")}
                         </span>
-                        {news.is_confirmed_fact ? (
-                          <span className="inline-flex items-center gap-1 rounded bg-[#0D6E52] px-1.5 py-0.5 font-mono text-[8px] font-bold text-white uppercase">
-                            <CheckCircle2 className="h-2.5 w-2.5" strokeWidth={2} />
+                        {n.is_confirmed_fact ? (
+                          <span className="inline-flex items-center gap-1 font-mono text-[9px] font-bold text-[#0D6847] uppercase">
+                            <CheckCircle2 className="h-2.5 w-2.5" />
                             Confirmed Fact
                           </span>
                         ) : (
-                          <span className="rounded bg-[#EAAA00] px-1.5 py-0.5 font-mono text-[8px] font-bold text-[#240820] uppercase">
+                          <span className="font-mono text-[9px] font-bold text-[#D97706] uppercase">
                             Proposal
                           </span>
                         )}
                       </div>
-                      <h4 className="font-mono text-xs font-bold text-[#1E081B] line-clamp-2">
-                        {news.title}
+                      <h4 className="font-mono text-xs font-bold text-[#111110] line-clamp-2">
+                        {n.title}
                       </h4>
-                      <p className="font-sans text-[11px] text-[#5E4B5B] line-clamp-2">
-                        {news.content}
+                      <p className="font-sans text-[11px] text-[#575551] line-clamp-2 leading-relaxed">
+                        {n.content}
                       </p>
-                      {news.event_date && (
-                        <div className="font-mono text-[10px] text-[#3A0F34] font-mono-numbers">
-                          Date: {news.event_date} {news.event_venue && `@ ${news.event_venue}`}
+                      {n.source_url && (
+                        <div className="pt-1 flex items-center justify-between font-mono text-[10px]">
+                          <span className="text-[#8B877F] truncate max-w-[180px]">
+                            Source: {n.source_name}
+                          </span>
+                          <a
+                            href={n.source_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-[#FF4F17] hover:underline flex items-center gap-0.5"
+                          >
+                            <span>Verify</span>
+                            <ExternalLink className="h-2.5 w-2.5" />
+                          </a>
                         </div>
                       )}
                     </div>
                   ))}
                 </div>
+
+                {/* Embedded Civic Pipeline Diagram */}
+                <CivicPipelineDiagram />
               </div>
 
               {/* Widget 2: Student Corner & Scholarships Box */}
-              <div className="rounded-2xl bg-[#3A0F34] text-white p-5 shadow-xl space-y-4">
-                <div className="flex items-center justify-between border-b border-white/15 pb-3">
+              <div
+                className="rounded-2xl p-5 text-white space-y-4"
+                style={{
+                  backgroundColor: "#111110",
+                  border: "1px solid rgba(244,242,238,0.12)",
+                }}
+              >
+                <div className="flex items-center justify-between border-b border-white/10 pb-3">
                   <div className="flex items-center gap-2">
-                    <Building2 className="h-4 w-4 text-[#EAAA00]" strokeWidth={1.75} />
-                    <h3 className="font-mono text-xs font-bold uppercase tracking-wider text-[#F8FAFC]">
-                      Student Corner Opportunities
+                    <BookOpen className="h-4 w-4 text-[#FF4F17]" strokeWidth={2} />
+                    <h3 className="font-mono text-xs font-bold text-white uppercase tracking-wide">
+                      Student Corner Matrix
                     </h3>
                   </div>
                   <button
                     onClick={() => setActiveTab("students")}
-                    className="font-mono text-[10px] text-[#EAAA00] hover:underline uppercase font-bold"
+                    className="font-mono text-[10px] text-[#FF4F17] hover:underline font-bold uppercase transition-colors pressable"
                   >
-                    All ({studentOpps.length})
+                    View All
                   </button>
                 </div>
 
-                {/* Compact, High-Trust Consumer Protection Header (Removes ugly purple bar from page top) */}
-                <div className="rounded-r-lg border-l-4 border-[#EAAA00] bg-[#240820] p-3 text-xs text-neutral-200 shadow-sm">
-                  <div className="flex items-start gap-2">
-                    <AlertTriangle className="h-3.5 w-3.5 text-[#EAAA00] mt-0.5 shrink-0" strokeWidth={2} />
-                    <div className="font-mono text-[11px] leading-relaxed">
-                      <span className="font-bold text-[#EAAA00] uppercase block mb-0.5">
-                        Anti-Scam Consumer Protection Notice:
-                      </span>
-                      <span>
-                        Never pay money to apply for any student internship, scholarship, or recruitment drive.
-                        Legitimate institutions and employers never demand processing fees.
-                      </span>
-                    </div>
-                  </div>
+                {/* Compact Consumer Protection Notice (No standalone giant purple banner) */}
+                <div className="student-protection-inline text-white/90">
+                  <AlertCircle className="h-3.5 w-3.5 text-[#FF4F17] shrink-0" />
+                  <span>ANTI-SCAM: ZERO APPLICATION FEES PERMITTED</span>
                 </div>
 
-                {/* Active Opportunities Cards */}
-                <div className="space-y-3">
+                {/* Student Opportunities Mini-Feed */}
+                <div className="space-y-3 pt-1">
                   {studentOpps.slice(0, 3).map((opp) => (
                     <div
                       key={opp.id}
-                      className="rounded-xl bg-white/5 border border-white/10 p-3.5 space-y-2 hover:bg-white/10 transition-colors"
+                      className="p-3 rounded-xl bg-white/5 border border-white/10 space-y-1.5 transition-colors hover:bg-white/10"
                     >
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="font-mono text-[9px] uppercase px-1.5 py-0.5 rounded bg-white/15 text-[#EAAA00] font-bold">
-                          {opp.opportunity_type.replace(/_/g, " ")}
+                      <div className="flex items-center justify-between gap-1">
+                        <span className="font-mono text-[9px] uppercase font-bold text-[#FF4F17]">
+                          {opp.opportunity_type.replace("_", " ")}
                         </span>
                         {opp.stipend_amount && (
-                          <span className="rounded bg-[#EAAA00] text-[#240820] font-mono font-bold text-[9px] px-2 py-0.5">
+                          <span className="font-mono text-[9px] font-bold text-white bg-[#FF4F17] px-2 py-0.5 rounded font-mono-numbers">
                             {opp.stipend_amount}
-                          </span>
-                        )}
-                        {opp.discount_percent && (
-                          <span className="rounded bg-[#0D6E52] text-white font-mono font-bold text-[9px] px-2 py-0.5">
-                            {opp.discount_percent}% OFF
                           </span>
                         )}
                       </div>
                       <h4 className="font-mono text-xs font-bold text-white line-clamp-1">
                         {opp.title}
                       </h4>
-                      <p className="font-sans text-[11px] text-white/70 line-clamp-2">
+                      <p className="font-sans text-[11px] text-white/70 line-clamp-1">
                         {opp.description}
                       </p>
-                      <div className="flex items-center justify-between pt-1 border-t border-white/10">
-                        <span className="text-[10px] font-mono text-white/60">
-                          {opp.provider_name}
-                        </span>
-                        {opp.apply_url ? (
-                          <a
-                            href={opp.apply_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 rounded bg-[#EAAA00] px-2.5 py-1 font-mono text-[10px] font-bold text-[#240820] hover:bg-[#ffc02e] uppercase"
-                          >
-                            <span>Apply</span>
-                            <ExternalLink className="h-2.5 w-2.5" />
-                          </a>
-                        ) : opp.contact_phone ? (
-                          <a
-                            href={`tel:${opp.contact_phone}`}
-                            className="font-mono text-[10px] text-[#EAAA00] hover:underline"
-                          >
-                            Call Provider
-                          </a>
-                        ) : null}
+                      <div className="flex items-center justify-between pt-1 font-mono text-[10px] text-white/50">
+                        <span>By {opp.provider_name}</span>
+                        <a
+                          href={opp.apply_url || "#"}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-[#FF4F17] hover:underline font-bold"
+                        >
+                          Apply Direct
+                        </a>
                       </div>
                     </div>
                   ))}
@@ -665,224 +981,204 @@ export default function DiscoveryHub() {
               </div>
             </div>
           </div>
-        ) : activeTab === "education" || activeTab === "business" ? (
-          /* Dedicated Directory View for Education Hub or Local Businesses */
+        ) : activeTab === "news" ? (
+          /* DEDICATED NEWS & CIVIC PULSE TAB */
           <div className="space-y-6">
-            <div className="flex items-center justify-between border-b border-[#C3CDD6] pb-3">
-              <div className="flex items-center gap-2">
-                <div className="h-4 w-1 bg-[#3A0F34] rounded-xs" />
-                <h2 className="font-mono text-sm font-bold uppercase tracking-wider text-[#3A0F34]">
-                  {activeTab === "education" ? "Education Institutions" : "Local Businesses"} ({filteredListings.length})
-                </h2>
-              </div>
-              <span className="font-mono text-xs text-[#5E4B5B] uppercase font-semibold">
-                Sorted by Verified Freshness
+            <div className="flex items-center justify-between pb-2 border-b border-[#D8D3C8]">
+              <h2 className="font-mono text-base font-bold text-[#111110] uppercase tracking-tight flex items-center gap-2">
+                <Calendar className="h-4 w-4 text-[#FF4F17]" />
+                <span>Verified Civic Development Tracker &amp; Town Events</span>
+              </h2>
+              <span className="font-mono text-xs text-[#575551]">
+                {newsItems.length} Verified Entries
               </span>
             </div>
 
-            {filteredListings.length === 0 ? (
-              <div className="rounded-2xl border border-[#C3CDD6] bg-[#F8FAFC] py-16 text-center font-mono text-xs text-[#5E4B5B] uppercase shadow-sm">
-                No matching listings found.
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredListings.map((item) => (
-                  <ListingCard
-                    key={item.id}
-                    item={item}
-                    onEnquire={() => setEnquiryListing(item)}
-                    onReport={() => setReportListing(item)}
-                    onRecordClick={recordClick}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
-        ) : activeTab === "students" ? (
-          /* Dedicated Student Corner View with Prominent Safety Notice */
-          <div className="space-y-6">
-            {/* Student Safety Notice */}
-            <div className="rounded-2xl border-l-4 border-[#EAAA00] bg-[#3A0F34] p-5 text-white shadow-lg">
-              <div className="flex items-start gap-3">
-                <AlertTriangle className="h-5 w-5 text-[#EAAA00] mt-0.5 shrink-0" strokeWidth={2} />
-                <div className="font-mono text-xs leading-relaxed space-y-1">
-                  <span className="font-bold text-[#EAAA00] uppercase text-sm block">
-                    Anti-Scam Consumer Protection Notice:
-                  </span>
-                  <p className="text-white/90">
-                    Never pay money to apply for any student internship, scholarship, or recruitment drive.
-                    Legitimate institutions and employers never demand processing fees.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between border-b border-[#C3CDD6] pb-3">
-              <div className="flex items-center gap-2">
-                <div className="h-4 w-1 bg-[#3A0F34] rounded-xs" />
-                <h2 className="font-mono text-sm font-bold uppercase tracking-wider text-[#3A0F34]">
-                  Student Opportunities & Verified Hostels ({studentOpps.length})
-                </h2>
-              </div>
-              <span className="font-mono text-xs text-[#0D6E52] uppercase font-bold">
-                Anti-Scam Protected
-              </span>
-            </div>
+            {/* Civic Verification Pipeline SVG */}
+            <CivicPipelineDiagram />
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {newsItems.map((n) => (
+                <div
+                  key={n.id}
+                  className="bg-white rounded-2xl border border-[#D8D3C8] p-5 space-y-3 hover:border-[#111110] transition-colors"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="font-mono text-[10px] uppercase font-bold text-[#575551] bg-[#EAE6DF] px-2 py-0.5 rounded">
+                      {n.item_type.replace("_", " ")}
+                    </span>
+                    {n.is_confirmed_fact ? (
+                      <span className="inline-flex items-center gap-1 font-mono text-[9px] font-bold text-[#0D6847] bg-[#ECFDF5] px-2 py-0.5 rounded border border-[#0D6847]/20 uppercase">
+                        <CheckCircle2 className="h-2.5 w-2.5" />
+                        Confirmed Fact
+                      </span>
+                    ) : (
+                      <span className="font-mono text-[9px] font-bold text-[#D97706] bg-[#FFFBEB] px-2 py-0.5 rounded border border-[#D97706]/20 uppercase">
+                        Proposal
+                      </span>
+                    )}
+                  </div>
+
+                  <h3 className="font-mono text-sm font-bold text-[#111110] leading-snug">
+                    {n.title}
+                  </h3>
+                  <p className="font-sans text-xs text-[#575551] leading-relaxed">
+                    {n.content}
+                  </p>
+
+                  <div className="border-t border-[#D8D3C8] pt-3 flex items-center justify-between font-mono text-[11px] text-[#8B877F]">
+                    <span>Source: {n.source_name}</span>
+                    {n.source_url && (
+                      <a
+                        href={n.source_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[#FF4F17] hover:underline flex items-center gap-1 font-bold"
+                      >
+                        <span>Source Link</span>
+                        <ExternalLink className="h-3 w-3" />
+                      </a>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : activeTab === "students" ? (
+          /* DEDICATED STUDENT CORNER MATRIX */
+          <div className="space-y-6">
+            <div className="flex items-center justify-between pb-2 border-b border-[#D8D3C8]">
+              <h2 className="font-mono text-base font-bold text-[#111110] uppercase tracking-tight flex items-center gap-2">
+                <BookOpen className="h-4 w-4 text-[#FF4F17]" />
+                <span>Student Hub: Internships, Scholarships &amp; Verified Hostels</span>
+              </h2>
+              <span className="font-mono text-xs text-[#575551]">
+                {studentOpps.length} Opportunities
+              </span>
+            </div>
+
+            {/* Consumer Protection Notice Banner */}
+            <div className="bg-[#111110] text-white p-4 rounded-xl border border-white/10 flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <span className="h-2.5 w-2.5 rounded-full bg-[#FF4F17] animate-pulse shrink-0" />
+                <span className="font-mono text-xs font-bold uppercase tracking-wider text-[#FF4F17]">
+                  Student Protection Protocol
+                </span>
+                <span className="font-sans text-xs text-neutral-300 hidden sm:inline">
+                  Zero application fees permitted. Never pay money to apply for any student internship, scholarship, or drive.
+                </span>
+              </div>
+              <span className="font-mono text-[10px] text-white/50 uppercase shrink-0">
+                100% Enforced
+              </span>
+            </div>
+
+            {/* Horizontal Matrix / Ledger */}
+            <div className="space-y-4">
               {studentOpps.map((opp) => (
                 <div
                   key={opp.id}
-                  className="rounded-2xl border border-[#C3CDD6] bg-[#F8FAFC] p-5 flex flex-col justify-between shadow-sm hover:shadow-md transition-all space-y-4"
+                  className="bg-white rounded-xl border border-[#D8D3C8] p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:border-[#111110] transition-colors"
                 >
-                  <div className="space-y-2.5">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="rounded bg-[#3A0F34] px-2 py-0.5 font-mono text-[10px] font-bold text-[#F8FAFC] uppercase">
-                        {opp.opportunity_type.replace(/_/g, " ")}
+                  <div className="space-y-1.5 flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-mono text-xs font-bold uppercase text-[#FF4F17] bg-[#FF4F17]/10 px-2.5 py-0.5 rounded">
+                        {opp.opportunity_type.replace("_", " ")}
                       </span>
+                      {opp.stipend_amount && (
+                        <span className="font-mono text-xs font-bold text-[#0D6847] bg-[#ECFDF5] px-2.5 py-0.5 rounded border border-[#0D6847]/20 font-mono-numbers">
+                          {opp.stipend_amount}
+                        </span>
+                      )}
                       {opp.deadline && (
-                        <span className="font-mono text-[10px] text-[#5E4B5B] font-mono-numbers font-semibold">
-                          Deadline: {opp.deadline}
+                        <span className="font-mono text-[11px] text-[#8B877F] flex items-center gap-1 font-mono-numbers">
+                          <Clock className="h-3 w-3" />
+                          <span>Deadline: {opp.deadline}</span>
                         </span>
                       )}
                     </div>
 
-                    <h3 className="font-mono text-base font-bold text-[#3A0F34] uppercase">
+                    <h3 className="font-mono text-base font-bold text-[#111110]">
                       {opp.title}
                     </h3>
-                    <div className="font-mono text-xs text-[#5E4B5B]">
-                      Provider: <strong className="text-[#1E081B]">{opp.provider_name}</strong>
-                    </div>
-
-                    <p className="font-sans text-xs text-[#1E081B]/80 leading-relaxed line-clamp-3">
+                    <p className="font-sans text-xs text-[#575551] leading-relaxed max-w-[85ch]">
                       {opp.description}
                     </p>
-
                     {opp.eligibility && (
-                      <div className="rounded bg-[#DDE3E8]/60 p-2 font-mono text-[11px] text-[#5E4B5B] border border-[#C3CDD6]/50">
-                        <span className="text-[#3A0F34] uppercase font-bold">Eligibility:</span>{" "}
-                        {opp.eligibility}
+                      <div className="font-mono text-[11px] text-[#575551]">
+                        Eligibility: <strong className="text-[#111110]">{opp.eligibility}</strong>
                       </div>
                     )}
-
-                    <div className="flex flex-wrap items-center gap-2 font-mono text-[11px] pt-1">
-                      {opp.stipend_amount && (
-                        <span className="rounded bg-[#0D6E52]/10 border border-[#0D6E52]/30 px-2 py-0.5 text-[#0D6E52] font-mono-numbers font-bold">
-                          Stipend: {opp.stipend_amount}
-                        </span>
-                      )}
-                      {opp.discount_percent && (
-                        <span className="rounded bg-[#EAAA00]/20 border border-[#EAAA00] px-2 py-0.5 text-[#240820] font-bold font-mono-numbers">
-                          Discount: {opp.discount_percent}% OFF
-                        </span>
-                      )}
-                    </div>
                   </div>
 
-                  <div className="flex items-center justify-between border-t border-[#C3CDD6] pt-3">
-                    <span className="font-mono text-[10px] text-[#0D6E52] uppercase font-bold flex items-center gap-1">
-                      <CheckCircle2 className="h-3 w-3" strokeWidth={2} />
-                      Verified
-                    </span>
-                    {opp.apply_url ? (
+                  <div className="flex items-center gap-3 shrink-0 self-start md:self-center">
+                    <div className="text-right font-mono text-[11px] text-[#8B877F] hidden sm:block">
+                      <div>Offered by</div>
+                      <div className="font-bold text-[#111110] truncate max-w-[150px]">
+                        {opp.provider_name}
+                      </div>
+                    </div>
+                    {opp.apply_url && (
                       <a
                         href={opp.apply_url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center gap-1.5 rounded bg-[#EAAA00] px-3.5 py-1.5 font-mono text-xs font-bold uppercase text-[#240820] hover:bg-[#ffc02e] shadow-xs"
+                        className="bg-[#FF4F17] hover:bg-[#e03d07] text-white font-mono text-xs font-bold uppercase px-4 py-2.5 rounded-lg flex items-center gap-1.5 pressable shadow-xs"
                       >
-                        <span>Apply / Details</span>
-                        <ExternalLink className="h-3 w-3" strokeWidth={2} />
+                        <span>Apply Now</span>
+                        <ArrowRight className="h-3.5 w-3.5" />
                       </a>
-                    ) : opp.contact_phone ? (
-                      <a
-                        href={`tel:${opp.contact_phone}`}
-                        className="rounded border border-[#C3CDD6] bg-[#DDE3E8] px-3 py-1.5 font-mono text-xs font-semibold text-[#1E081B] hover:bg-[#3A0F34] hover:text-[#F8FAFC]"
-                      >
-                        Call: {opp.contact_phone}
-                      </a>
-                    ) : null}
+                    )}
                   </div>
                 </div>
               ))}
             </div>
           </div>
         ) : (
-          /* Dedicated News & Civic Development View */
+          /* DEDICATED VERTICAL LISTING GRID (Education Hub or Local Businesses) */
           <div className="space-y-6">
-            <div className="flex items-center justify-between border-b border-[#C3CDD6] pb-3">
-              <div className="flex items-center gap-2">
-                <div className="h-4 w-1 bg-[#3A0F34] rounded-xs" />
-                <h2 className="font-mono text-sm font-bold uppercase tracking-wider text-[#3A0F34]">
-                  News & Civic Development Tracker ({newsItems.length})
-                </h2>
-              </div>
-              <span className="font-mono text-xs text-[#5E4B5B] uppercase font-semibold">
-                Verified Sources Only
+            <div className="flex items-center justify-between pb-2 border-b border-[#D8D3C8]">
+              <h2 className="font-mono text-base font-bold text-[#111110] uppercase tracking-tight flex items-center gap-2">
+                {activeTab === "education" ? (
+                  <>
+                    <GraduationCap className="h-4 w-4 text-[#FF4F17]" />
+                    <span>Education Hub: Colleges, Schools &amp; Academies</span>
+                  </>
+                ) : (
+                  <>
+                    <Building2 className="h-4 w-4 text-[#FF4F17]" />
+                    <span>Local Commercial Storefronts, Cafes &amp; Bookstores</span>
+                  </>
+                )}
+              </h2>
+              <span className="font-mono text-xs text-[#575551]">
+                {filteredListings.length} Entities
               </span>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {newsItems.map((news) => (
-                <div
-                  key={news.id}
-                  className="rounded-2xl border border-[#C3CDD6] bg-[#F8FAFC] p-5 flex flex-col justify-between shadow-sm hover:shadow-md transition-all space-y-4"
-                >
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="rounded bg-[#DDE3E8] border border-[#C3CDD6] px-2 py-0.5 font-mono text-[10px] font-bold text-[#1E081B] uppercase">
-                        {news.item_type.replace(/_/g, " ")}
-                      </span>
-                      {news.is_confirmed_fact ? (
-                        <span className="inline-flex items-center gap-1 rounded bg-[#0D6E52] px-2 py-0.5 font-mono text-[9px] font-bold text-white uppercase shadow-xs">
-                          <CheckCircle2 className="h-3 w-3 text-white" strokeWidth={2} />
-                          Confirmed Fact
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 rounded bg-[#EAAA00] px-2 py-0.5 font-mono text-[9px] font-bold text-[#240820] uppercase shadow-xs">
-                          <AlertCircle className="h-3 w-3 text-[#240820]" strokeWidth={2} />
-                          Proposal
-                        </span>
-                      )}
-                    </div>
-
-                    <h3 className="font-mono text-base font-bold text-[#3A0F34] uppercase">
-                      {news.title}
-                    </h3>
-
-                    {news.event_date && (
-                      <div className="rounded bg-[#DDE3E8]/70 border border-[#C3CDD6] p-2 font-mono text-xs text-[#1E081B] font-mono-numbers">
-                        Date: {news.event_date} {news.event_time && `at ${news.event_time}`} | Venue: {news.event_venue}
-                      </div>
-                    )}
-
-                    <p className="font-sans text-xs text-[#1E081B]/80 leading-relaxed">
-                      {news.content}
-                    </p>
-                  </div>
-
-                  <div className="flex items-center justify-between border-t border-[#C3CDD6] pt-3 font-mono text-[11px] text-[#5E4B5B]">
-                    <span>Source: <strong className="text-[#1E081B]">{news.source_name}</strong></span>
-                    {news.source_url && (
-                      <a
-                        href={news.source_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 font-semibold text-[#3A0F34] hover:text-[#EAAA00] underline"
-                      >
-                        <span>View Source</span>
-                        <ExternalLink className="h-3 w-3" strokeWidth={1.75} />
-                      </a>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
+            {filteredListings.length === 0 ? (
+              <div className="rounded-2xl border border-[#D8D3C8] bg-white p-12 text-center font-mono text-xs text-[#575551] uppercase">
+                No verified listings found in {town} for this vertical.
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredListings.map((item) => (
+                  <VisualListingCard
+                    key={item.id}
+                    item={item}
+                    onEnquire={(l) => setEnquiryListing(l)}
+                    onReport={(l) => setReportListing(l)}
+                    onRecordClick={recordClick}
+                    onCopyLink={copyListingLink}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>
 
-      {/* Interactive Modals */}
+      {/* Interactive Enquiry Modal */}
       <EnquiryModal
         isOpen={Boolean(enquiryListing)}
         onClose={() => setEnquiryListing(null)}
@@ -890,188 +1186,13 @@ export default function DiscoveryHub() {
         apiUrl={API_BASE}
       />
 
+      {/* Interactive Report Issue Modal */}
       <ReportModal
         isOpen={Boolean(reportListing)}
         onClose={() => setReportListing(null)}
         listing={reportListing}
         apiUrl={API_BASE}
       />
-    </div>
-  );
-}
-
-// 4. RICH VISUAL LISTING CARD WITH 130PX COVER, MONOGRAM AVATAR & TICKET OFFER
-function ListingCard({
-  item,
-  onEnquire,
-  onReport,
-  onRecordClick,
-}: {
-  item: ListingItem;
-  onEnquire: () => void;
-  onReport: () => void;
-  onRecordClick: (id: string, type: "whatsapp" | "call") => void;
-}) {
-  const coverUrl = getCoverImage(item.category_name, item.name);
-  const monogram = getMonogram(item.name);
-
-  return (
-    <div className="group rounded-2xl border border-[#C3CDD6]/80 bg-[#F8FAFC] shadow-[0_2px_12px_rgba(58,15,52,0.06)] hover:shadow-[0_12px_28px_rgba(58,15,52,0.14)] hover:-translate-y-1 transition-all duration-200 overflow-hidden flex flex-col justify-between">
-      <div>
-        {/* 130px Visual Cover Header with Dark Gradient Scrim */}
-        <div className="relative h-[130px] w-full bg-[#3A0F34] overflow-hidden">
-          <Image
-            src={coverUrl}
-            alt={item.name}
-            fill
-            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-            className="object-cover group-hover:scale-105 transition-transform duration-500"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#1F071C]/90 via-[#1F071C]/35 to-transparent" />
-
-          {/* Top-Left Floating Pill: Category Tag */}
-          <div className="absolute top-3 left-3 z-10">
-            <span className="rounded-md bg-black/45 backdrop-blur-md px-2.5 py-1 font-mono text-[10px] font-bold text-white uppercase tracking-wider border border-white/10 shadow-xs">
-              {item.category_name}
-            </span>
-          </div>
-
-          {/* Top-Right Floating Badges: Sponsored & Verification */}
-          <div className="absolute top-3 right-3 z-10 flex items-center gap-1.5">
-            {item.is_sponsored && (
-              <span className="rounded-md bg-[#EAAA00] px-2 py-0.5 font-mono text-[9px] font-extrabold text-[#240820] uppercase shadow-xs">
-                Sponsored
-              </span>
-            )}
-            {item.verification_status === "details_reviewed" && (
-              <span className="inline-flex items-center gap-1 rounded-md bg-[#0D6E52] px-2 py-0.5 font-mono text-[9px] font-bold text-white uppercase shadow-xs">
-                <CheckCircle2 className="h-2.5 w-2.5" strokeWidth={2} />
-                Details Reviewed
-              </span>
-            )}
-            {item.verification_status === "owner_claimed" && (
-              <span className="inline-flex items-center gap-1 rounded-md bg-[#3A0F34] border border-[#EAAA00]/40 px-2 py-0.5 font-mono text-[9px] font-bold text-[#EAAA00] uppercase shadow-xs">
-                <ShieldCheck className="h-2.5 w-2.5" strokeWidth={2} />
-                Owner Claimed
-              </span>
-            )}
-            {item.verification_status === "not_verified" && (
-              <span className="rounded-md bg-neutral-900/80 px-2 py-0.5 font-mono text-[9px] text-neutral-300 uppercase">
-                Not Verified
-              </span>
-            )}
-          </div>
-        </div>
-
-        {/* Overlapping Monogram / Institution Avatar along bottom edge */}
-        <div className="relative z-10 -mt-6 px-5 flex items-center justify-between">
-          <div className="h-12 w-12 rounded-xl bg-[#3A0F34] text-[#EAAA00] border-2 border-[#F8FAFC] font-bold text-base shadow-md flex items-center justify-center shrink-0 tracking-wider">
-            {monogram}
-          </div>
-          <span className="font-mono text-[10px] text-[#5E4B5B] font-mono-numbers bg-[#DDE3E8]/50 px-2 py-0.5 rounded">
-            Confirmed: {new Date(item.last_confirmed_at).toISOString().split("T")[0]}
-          </span>
-        </div>
-
-        {/* Card Body */}
-        <div className="p-5 pt-3 space-y-2">
-          {/* Institution / Business Title */}
-          <Link
-            href={`/listings/${item.slug}`}
-            className="font-mono text-base font-bold text-[#1E081B] group-hover:text-[#3A0F34] transition-colors uppercase tracking-tight block line-clamp-1"
-          >
-            {item.name}
-          </Link>
-
-          {/* Locality Pin + Address */}
-          <div className="flex items-center gap-1.5 font-mono text-[11px] text-[#5E4B5B]">
-            <MapPin className="h-3.5 w-3.5 text-[#3A0F34] shrink-0" strokeWidth={2} />
-            <span className="truncate">
-              <strong>{item.locality}</strong>, {item.city}
-            </span>
-          </div>
-
-          {/* 2-line Description */}
-          <p className="font-sans text-xs text-[#5E4B5B] line-clamp-2 leading-relaxed">
-            {item.tagline}
-          </p>
-
-          {/* Structured Metadata Chips */}
-          <div className="flex flex-wrap items-center gap-1.5 pt-1">
-            <span className="rounded-md bg-[#DDE3E8]/70 border border-[#C3CDD6]/50 px-2.5 py-0.5 font-mono text-[10px] font-semibold text-[#3A0F34] uppercase">
-              {item.vertical === "education" ? "Accredited Campus" : "Commercial Verified"}
-            </span>
-            <span className="rounded-md bg-[#DDE3E8]/70 border border-[#C3CDD6]/50 px-2.5 py-0.5 font-mono text-[10px] font-semibold text-[#5E4B5B] uppercase flex items-center gap-1">
-              <Clock className="h-2.5 w-2.5" />
-              <span>Full-Time Ops</span>
-            </span>
-          </div>
-
-          {/* Ticket-Style Student / Local Offer Strip */}
-          <div className="bg-gradient-to-r from-[#EAAA00]/25 via-[#EAAA00]/10 to-transparent border border-[#EAAA00]/60 rounded-xl px-3 py-2 flex items-center justify-between shadow-xs">
-            <div className="flex items-center gap-1.5">
-              <Tag className="h-3 w-3 text-[#3A0F34]" strokeWidth={2} />
-              <span className="font-mono text-[10px] font-bold text-[#1E081B] uppercase tracking-wide">
-                {item.vertical === "education" ? "Admissions Open 2026-27" : "Student Discount Privilege"}
-              </span>
-            </div>
-            <span className="font-mono text-[10px] font-bold text-[#0D6E52]">
-              Verified
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* Card Footer */}
-      <div className="p-5 pt-0">
-        <div className="flex items-center justify-between border-t border-[#C3CDD6]/80 pt-3">
-          {/* Left: WhatsApp + Call buttons */}
-          <div className="flex items-center gap-1.5">
-            {item.whatsapp && (
-              <a
-                href={`https://wa.me/${item.whatsapp.replace(/[^0-9]/g, "")}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={() => onRecordClick(item.id, "whatsapp")}
-                className="flex items-center gap-1.5 rounded-lg border border-[#C3CDD6] bg-white px-2.5 py-1.5 font-mono text-[11px] font-semibold text-[#1E081B] hover:border-[#3A0F34] hover:bg-[#DDE3E8]/30 transition-colors shadow-xs"
-              >
-                <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                <MessageSquare className="h-3 w-3 text-[#0D6E52]" strokeWidth={2} />
-                <span>WhatsApp</span>
-              </a>
-            )}
-
-            {item.phone && (
-              <a
-                href={`tel:${item.phone}`}
-                onClick={() => onRecordClick(item.id, "call")}
-                className="flex items-center gap-1 rounded-lg border border-[#C3CDD6] bg-white px-2.5 py-1.5 font-mono text-[11px] font-semibold text-[#1E081B] hover:border-[#3A0F34] hover:bg-[#DDE3E8]/30 transition-colors shadow-xs"
-              >
-                <Phone className="h-3 w-3 text-[#3A0F34]" strokeWidth={2} />
-                <span>Call</span>
-              </a>
-            )}
-          </div>
-
-          {/* Right: Enquire + Report */}
-          <div className="flex items-center gap-1.5">
-            <button
-              onClick={onReport}
-              title="Report inaccurate details"
-              className="rounded-lg p-1.5 text-[#5E4B5B] hover:bg-[#DDE3E8] hover:text-[#B93829] transition-colors"
-            >
-              <Flag className="h-3.5 w-3.5" strokeWidth={1.75} />
-            </button>
-
-            <button
-              onClick={onEnquire}
-              className="rounded-lg bg-[#3A0F34] hover:bg-[#240820] text-white font-mono text-xs font-semibold px-4 py-2 flex items-center gap-1.5 shadow-sm transition-all active:scale-95 uppercase"
-            >
-              <span>{item.vertical === "education" ? "Enquire / Apply" : "Enquire"}</span>
-            </button>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }

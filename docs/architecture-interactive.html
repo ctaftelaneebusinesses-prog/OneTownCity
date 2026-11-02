@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OneTownCity — System Architecture &amp; SaaS Domain Reference</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --canvas: #F4F2EE;
+      --surface: #FFFFFF;
+      --muted: #EAE6DF;
+      --ink: #111110;
+      --slate: #575551;
+      --grid: #D8D3C8;
+      --signal: #FF4F17;
+      --jade: #0D6847;
+      --ochre: #D97706;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--canvas);
+      color: var(--ink);
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+    header {
+      background: var(--ink);
+      color: var(--canvas);
+      padding: 48px 32px;
+      border-bottom: 1px solid rgba(244,242,238,0.1);
+    }
+    .header-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    .badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--signal);
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    h1 {
+      font-family: 'Instrument Serif', Georgia, serif;
+      font-size: clamp(36px, 5vw, 60px);
+      font-weight: 400;
+      line-height: 1.05;
+      letter-spacing: -0.02em;
+      margin-top: 12px;
+    }
+    .subtitle {
+      color: rgba(244,242,238,0.7);
+      margin-top: 12px;
+      max-width: 70ch;
+      font-size: 15px;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 40px 24px;
+    }
+    .section-title {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      font-weight: 700;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .section-title::before {
+      content: "";
+      width: 4px;
+      height: 14px;
+      background: var(--signal);
+      display: inline-block;
+      border-radius: 1px;
+    }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--grid);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 32px;
+    }
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 20px;
+    }
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 16px;
+    }
+    .domain-box {
+      border: 1px solid var(--grid);
+      border-radius: 8px;
+      padding: 18px;
+      background: #FAFAFA;
+      transition: all 0.2s ease;
+    }
+    .domain-box:hover {
+      border-color: var(--ink);
+      transform: translateY(-2px);
+    }
+    .domain-tag {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--signal);
+      text-transform: uppercase;
+    }
+    .domain-name {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 15px;
+      font-weight: 700;
+      margin: 4px 0 8px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+    }
+    th, td {
+      padding: 10px 14px;
+      text-align: left;
+      border-bottom: 1px solid var(--grid);
+    }
+    th {
+      background: var(--muted);
+      font-weight: 700;
+      color: var(--ink);
+      text-transform: uppercase;
+      font-size: 11px;
+    }
+    .method {
+      display: inline-block;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: 700;
+      font-size: 10px;
+    }
+    .get { background: #ECFDF5; color: var(--jade); }
+    .post { background: rgba(255,79,23,0.1); color: var(--signal); }
+    .patch { background: #FFFBEB; color: var(--ochre); }
+    svg { width: 100%; height: auto; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-inner">
+      <div class="badge">
+        <span>●</span> OneTownCity Architecture Reference
+      </div>
+      <h1>System Architecture &amp; SaaS Domain Model</h1>
+      <p class="subtitle">
+        Performance-first hyperlocal discovery &amp; multi-tenant SaaS platform. Engineered with Next.js App Router (TypeScript), Rust Axum 0.7 + Tokio + SQLx 0.8, and PostgreSQL 16 Full-Text Search.
+      </p>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- 6 SaaS Domains -->
+    <h2 class="section-title">The 6 SaaS Domain Boundaries</h2>
+    <div class="card">
+      <div class="grid-3">
+        <div class="domain-box">
+          <div class="domain-tag">Domain 01</div>
+          <div class="domain-name">Directory Hub</div>
+          <p style="font-size: 13px; color: var(--slate);">
+            Unified listing catalog across 4 verticals (news, education, students, business) with PostgreSQL FTS, locality filtering, and category mapping.
+          </p>
+        </div>
+        <div class="domain-box">
+          <div class="domain-tag">Domain 02</div>
+          <div class="domain-name">Identity &amp; RBAC</div>
+          <p style="font-size: 13px; color: var(--slate);">
+            Role assignments (super_admin, city_admin, content_provider, tenant_owner, student). Header-based persona verification context.
+          </p>
+        </div>
+        <div class="domain-box">
+          <div class="domain-tag">Domain 03</div>
+          <div class="domain-name">Strict Tenancy</div>
+          <p style="font-size: 13px; color: var(--slate);">
+            Organizations (education or business) with server-derived tenant_id via VerifiedTenantContext. Zero trusting of client-supplied tenant IDs.
+          </p>
+        </div>
+        <div class="domain-box">
+          <div class="domain-tag">Domain 04</div>
+          <div class="domain-name">Monetization Engine</div>
+          <p style="font-size: 13px; color: var(--slate);">
+            SaaS subscription tiers (free, growth_business, edu_pro, campus_enterprise) with monthly lead quotas and clearly labeled sponsored flags.
+          </p>
+        </div>
+        <div class="domain-box">
+          <div class="domain-tag">Domain 05</div>
+          <div class="domain-name">Telemetry &amp; Leads</div>
+          <p style="font-size: 13px; color: var(--slate);">
+            Actionable admission requests, course fee enquiries, WhatsApp/call telemetry tracking, and dated student passes.
+          </p>
+        </div>
+        <div class="domain-box">
+          <div class="domain-tag">Domain 06</div>
+          <div class="domain-name">Governance &amp; Trust</div>
+          <p style="font-size: 13px; color: var(--slate);">
+            Verification states (not_verified, owner_claimed, details_reviewed), moderation queue (pending, approved, rejected), and user issue reports.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Request & Data Flow SVG -->
+    <h2 class="section-title">End-to-End System Request Flow</h2>
+    <div class="card">
+      <svg viewBox="0 0 900 240" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect width="900" height="240" rx="8" fill="#F4F2EE"/>
+        <!-- Layer 1: Client -->
+        <rect x="20" y="40" width="180" height="160" rx="8" fill="#FFFFFF" stroke="#D8D3C8" stroke-width="1.5"/>
+        <text x="35" y="70" fill="#111110" font-family="JetBrains Mono" font-weight="700" font-size="13">NEXT.JS FRONTEND</text>
+        <text x="35" y="95" fill="#575551" font-size="11">App Router (v16.4)</text>
+        <text x="35" y="115" fill="#575551" font-size="11">Tailwind CSS + shadcn</text>
+        <text x="35" y="135" fill="#575551" font-size="11">Framer Motion + Vaul</text>
+        <rect x="35" y="155" width="150" height="26" rx="4" fill="#FF4F17"/>
+        <text x="50" y="172" fill="#FFFFFF" font-family="JetBrains Mono" font-size="10" font-weight="700">Port 3000</text>
+
+        <!-- Arrow 1 -->
+        <path d="M210 120 H270 M260 115 L270 120 L260 125" stroke="#111110" stroke-width="2"/>
+        <text x="215" y="105" fill="#575551" font-family="JetBrains Mono" font-size="9">JSON / HTTP</text>
+
+        <!-- Layer 2: Rust API -->
+        <rect x="280" y="40" width="280" height="160" rx="8" fill="#111110" stroke="#111110" stroke-width="1.5"/>
+        <text x="300" y="70" fill="#F4F2EE" font-family="JetBrains Mono" font-weight="700" font-size="13">RUST MODULAR MONOLITH</text>
+        <text x="300" y="95" fill="#D8D3C8" font-size="11">Axum 0.7 + Tokio + SQLx 0.8</text>
+        <text x="300" y="115" fill="#FF4F17" font-size="11" font-family="JetBrains Mono">VerifiedTenantContext Extractor</text>
+        <text x="300" y="135" fill="#D8D3C8" font-size="11">Lead Quota Enforcer</text>
+        <rect x="300" y="155" width="130" height="26" rx="4" fill="#0D6847"/>
+        <text x="315" y="172" fill="#FFFFFF" font-family="JetBrains Mono" font-size="10" font-weight="700">Port 8080</text>
+
+        <!-- Arrow 2 -->
+        <path d="M570 120 H630 M620 115 L630 120 L620 125" stroke="#111110" stroke-width="2"/>
+        <text x="575" y="105" fill="#575551" font-family="JetBrains Mono" font-size="9">SQLx Pool</text>
+
+        <!-- Layer 3: Postgres -->
+        <rect x="640" y="40" width="240" height="160" rx="8" fill="#FFFFFF" stroke="#D8D3C8" stroke-width="1.5"/>
+        <text x="660" y="70" fill="#111110" font-family="JetBrains Mono" font-weight="700" font-size="13">POSTGRESQL 16</text>
+        <text x="660" y="95" fill="#575551" font-size="11">Docker Compose Container</text>
+        <text x="660" y="115" fill="#575551" font-size="11">tsvector FTS + GIN Indexes</text>
+        <text x="660" y="135" fill="#575551" font-size="11">Tenant-Scoped Foreign Keys</text>
+        <rect x="660" y="155" width="130" height="26" rx="4" fill="#EAE6DF"/>
+        <text x="675" y="172" fill="#111110" font-family="JetBrains Mono" font-size="10" font-weight="700">Port 5432</text>
+      </svg>
+    </div>
+
+    <!-- API Contracts -->
+    <h2 class="section-title">Core API Contract &amp; Endpoints</h2>
+    <div class="card" style="padding: 0; overflow: hidden;">
+      <table>
+        <thead>
+          <tr>
+            <th>Method</th>
+            <th>Endpoint</th>
+            <th>Domain</th>
+            <th>Description &amp; Access</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="method get">GET</span></td>
+            <td>/api/v1/listings</td>
+            <td>Directory</td>
+            <td>Public directory search across Nellore &amp; Kuppam with FTS, category &amp; locality filters.</td>
+          </tr>
+          <tr>
+            <td><span class="method get">GET</span></td>
+            <td>/api/v1/listings/:slug</td>
+            <td>Directory</td>
+            <td>Full listing dossier with structured courses, admissions data, and facilities.</td>
+          </tr>
+          <tr>
+            <td><span class="method get">GET</span></td>
+            <td>/api/v1/news</td>
+            <td>News</td>
+            <td>Verified civic updates, campus events, and infrastructure tracker.</td>
+          </tr>
+          <tr>
+            <td><span class="method get">GET</span></td>
+            <td>/api/v1/students/opportunities</td>
+            <td>Students</td>
+            <td>Internships, scholarships, hackathons, and verified student hostels.</td>
+          </tr>
+          <tr>
+            <td><span class="method post">POST</span></td>
+            <td>/api/v1/enquiries</td>
+            <td>Engagement</td>
+            <td>Submit direct course fee, admission, or business availability enquiry.</td>
+          </tr>
+          <tr>
+            <td><span class="method post">POST</span></td>
+            <td>/api/v1/telemetry/click</td>
+            <td>Engagement</td>
+            <td>Track WhatsApp &amp; phone call interaction telemetry for listings.</td>
+          </tr>
+          <tr>
+            <td><span class="method get">GET</span></td>
+            <td>/api/v1/saas/dashboard</td>
+            <td>Tenancy</td>
+            <td>Tenant owner metrics: profile views, lead quotas, and WhatsApp interactions.</td>
+          </tr>
+          <tr>
+            <td><span class="method patch">PATCH</span></td>
+            <td>/api/v1/saas/leads/:id/status</td>
+            <td>Engagement</td>
+            <td>Tenant updates lead status (open vs responded).</td>
+          </tr>
+          <tr>
+            <td><span class="method get">GET</span></td>
+            <td>/api/v1/admin/moderation</td>
+            <td>Governance</td>
+            <td>City admin moderation queue for pending listings and student opportunities.</td>
+          </tr>
+          <tr>
+            <td><span class="method post">POST</span></td>
+            <td>/api/v1/admin/verify/listing/:id</td>
+            <td>Governance</td>
+            <td>Assign or revoke details_reviewed verification seal.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+</body>
+</html>

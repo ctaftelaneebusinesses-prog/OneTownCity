@@ -1,0 +1,68 @@
+<svg width="800" height="450" viewBox="0 0 800 450" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="du-sky" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#181816"/>
+      <stop offset="60%" stop-color="#121211"/>
+      <stop offset="100%" stop-color="#0B0B0A"/>
+    </linearGradient>
+    <linearGradient id="du-arch" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#262623"/>
+      <stop offset="100%" stop-color="#171715"/>
+    </linearGradient>
+    <pattern id="du-grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(216,211,200,0.05)" stroke-width="0.8"/>
+    </pattern>
+  </defs>
+
+  <rect width="800" height="450" fill="url(#du-sky)"/>
+  <rect width="800" height="450" fill="url(#du-grid)"/>
+
+  <!-- Boundary & Coordinate Hairlines -->
+  <line x1="50" y1="50" x2="750" y2="50" stroke="rgba(216,211,200,0.15)" stroke-width="1" stroke-dasharray="2 4"/>
+  <line x1="50" y1="400" x2="750" y2="400" stroke="rgba(216,211,200,0.25)" stroke-width="1.2"/>
+
+  <!-- Monumental Academic Gateway (Arch of Dravida) -->
+  <!-- Left Main Column Pylon -->
+  <rect x="240" y="110" width="70" height="290" fill="url(#du-arch)" stroke="rgba(216,211,200,0.2)" stroke-width="1.2"/>
+  <rect x="250" y="130" width="50" height="250" fill="none" stroke="rgba(216,211,200,0.1)" stroke-width="1"/>
+
+  <!-- Right Main Column Pylon -->
+  <rect x="490" y="110" width="70" height="290" fill="url(#du-arch)" stroke="rgba(216,211,200,0.2)" stroke-width="1.2"/>
+  <rect x="500" y="130" width="50" height="250" fill="none" stroke="rgba(216,211,200,0.1)" stroke-width="1"/>
+
+  <!-- Monumental Arch Bridge Header -->
+  <rect x="200" y="80" width="400" height="50" fill="#20201D" stroke="rgba(216,211,200,0.3)" stroke-width="1.5"/>
+  <line x1="200" y1="130" x2="600" y2="130" stroke="#FF4F17" stroke-width="2"/>
+  
+  <!-- Central Arch Curve (Architectural Arch) -->
+  <path d="M 310 400 L 310 240 Q 400 170 490 240 L 490 400" fill="none" stroke="#FF4F17" stroke-width="1.8"/>
+  <path d="M 330 400 L 330 250 Q 400 190 470 250 L 470 400" fill="none" stroke="rgba(216,211,200,0.15)" stroke-width="1" stroke-dasharray="3 3"/>
+
+  <!-- Symmetrical Lateral Colonnade Wings -->
+  <g stroke="rgba(216,211,200,0.18)" stroke-width="1" fill="#181816">
+    <rect x="100" y="200" width="120" height="200"/>
+    <line x1="140" y1="200" x2="140" y2="400"/>
+    <line x1="180" y1="200" x2="180" y2="400"/>
+
+    <rect x="580" y="200" width="120" height="200"/>
+    <line x1="620" y1="200" x2="620" y2="400"/>
+    <line x1="660" y1="200" x2="660" y2="400"/>
+  </g>
+
+  <!-- Stepped Pediment Tympanum -->
+  <polygon points="400,30 220,80 580,80" fill="#1C1C1A" stroke="rgba(216,211,200,0.3)" stroke-width="1"/>
+  <circle cx="400" cy="62" r="12" fill="none" stroke="#FF4F17" stroke-width="1.5"/>
+  <circle cx="400" cy="62" r="6" fill="#FF4F17"/>
+
+  <!-- Typographic Identification -->
+  <text x="400" y="108" fill="#F4F2EE" font-family="'Instrument Serif', serif, Georgia" font-size="20" font-weight="400" text-anchor="middle" letter-spacing="3">DRAVIDIAN UNIVERSITY</text>
+  <text x="400" y="122" fill="#8B877F" font-family="monospace" font-size="8" text-anchor="middle" letter-spacing="2">ESTD 1997 · STATE UNIVERSITY · KUPPAM</text>
+
+  <!-- Technical Axis and Survey Data -->
+  <g font-family="monospace" font-size="9" fill="rgba(244,242,238,0.7)" letter-spacing="1.5">
+    <text x="60" y="75">INSTITUTION 02 // DRAVIDIAN UNIVERSITY CAMPUS</text>
+    <text x="60" y="95" font-size="8" fill="#8B877F">SRINIVASAVANAM · 1093 ACRE INTEGRATED BIOSPHERE CAMPUS</text>
+    <text x="740" y="75" text-anchor="end" fill="#0D6847" font-weight="700">NAAC 'A' GRADE</text>
+    <text x="740" y="95" text-anchor="end" font-size="8" fill="#8B877F">TRI-STATE TRI-JUNCTION BORDER</text>
+  </g>
+</svg>

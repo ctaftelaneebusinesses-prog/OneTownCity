@@ -1,0 +1,68 @@
+<svg width="800" height="450" viewBox="0 0 800 450" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="sch-sky" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#181916"/>
+      <stop offset="60%" stop-color="#121311"/>
+      <stop offset="100%" stop-color="#0B0C0A"/>
+    </linearGradient>
+    <pattern id="sch-grid" width="32" height="32" patternUnits="userSpaceOnUse">
+      <path d="M 32 0 L 0 0 0 32" fill="none" stroke="rgba(216,211,200,0.06)" stroke-width="0.8"/>
+    </pattern>
+  </defs>
+
+  <rect width="800" height="450" fill="url(#sch-sky)"/>
+  <rect width="800" height="450" fill="url(#sch-grid)"/>
+
+  <!-- Perimeter Hairlines -->
+  <line x1="50" y1="50" x2="750" y2="50" stroke="rgba(216,211,200,0.15)" stroke-width="1" stroke-dasharray="2 4"/>
+  <line x1="50" y1="400" x2="750" y2="400" stroke="rgba(216,211,200,0.2)" stroke-width="1"/>
+
+  <!-- Main School Building Block -->
+  <rect x="120" y="160" width="560" height="240" fill="#1C1D1A" stroke="rgba(216,211,200,0.2)" stroke-width="1.2"/>
+
+  <!-- Academic Clock / Bell Tower -->
+  <rect x="360" y="80" width="80" height="320" fill="#242621" stroke="#FF4F17" stroke-width="1.5"/>
+  <circle cx="400" cy="120" r="16" fill="#181916" stroke="rgba(216,211,200,0.4)" stroke-width="1.2"/>
+  <line x1="400" y1="120" x2="400" y2="110" stroke="#FF4F17" stroke-width="1.5"/>
+  <line x1="400" y1="120" x2="408" y2="120" stroke="#FF4F17" stroke-width="1.5"/>
+
+  <!-- Classroom Window Grid (Rhythmic Modernist Openings) -->
+  <g fill="#121310" stroke="rgba(216,211,200,0.25)" stroke-width="1">
+    <!-- Level 2 Windows -->
+    <rect x="150" y="190" width="45" height="35"/>
+    <rect x="210" y="190" width="45" height="35"/>
+    <rect x="270" y="190" width="45" height="35"/>
+
+    <rect x="480" y="190" width="45" height="35"/>
+    <rect x="540" y="190" width="45" height="35"/>
+    <rect x="600" y="190" width="45" height="35"/>
+
+    <!-- Level 1 Windows -->
+    <rect x="150" y="250" width="45" height="35"/>
+    <rect x="210" y="250" width="45" height="35"/>
+    <rect x="270" y="250" width="45" height="35"/>
+
+    <rect x="480" y="250" width="45" height="35"/>
+    <rect x="540" y="250" width="45" height="35"/>
+    <rect x="600" y="250" width="45" height="35"/>
+  </g>
+
+  <!-- Open Ground Floor Colonnade & Assembly Portico -->
+  <g stroke="rgba(216,211,200,0.3)" stroke-width="1.5">
+    <line x1="120" y1="320" x2="680" y2="320"/>
+    <line x1="160" y1="320" x2="160" y2="400"/>
+    <line x1="220" y1="320" x2="220" y2="400"/>
+    <line x1="280" y1="320" x2="280" y2="400"/>
+    <line x1="520" y1="320" x2="520" y2="400"/>
+    <line x1="580" y1="320" x2="580" y2="400"/>
+    <line x1="640" y1="320" x2="640" y2="400"/>
+  </g>
+
+  <!-- Metadata -->
+  <g font-family="monospace" font-size="9" fill="rgba(244,242,238,0.7)" letter-spacing="1.5">
+    <text x="60" y="75">EDUCATION 03 // ACADEMIC SCHOOL &amp; JUNIOR COLLEGE QUADRANGLE</text>
+    <text x="60" y="95" font-size="8" fill="#8B877F">CBSE &amp; STATE BOARD CURRICULUM · STEM LABORATORIES</text>
+    <text x="740" y="75" text-anchor="end" fill="#0D6847" font-weight="700">VERIFIED CAMPUS</text>
+    <text x="740" y="95" text-anchor="end" font-size="8" fill="#8B877F">DISTRICT CODE: 104</text>
+  </g>
+</svg>

@@ -382,3 +382,15 @@ pub struct LeadWithListing {
     pub status: EnquiryStatus,
     pub created_at: DateTime<Utc>,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
+pub struct AuditLog {
+    pub id: Uuid,
+    pub entity_type: String,
+    pub entity_id: String,
+    pub action: String,
+    pub actor_id: Option<Uuid>,
+    pub actor_role: String,
+    pub payload: Value,
+    pub created_at: DateTime<Utc>,
+}

@@ -1,0 +1,51 @@
+<svg width="800" height="450" viewBox="0 0 800 450" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="civ-sky" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#181816"/>
+      <stop offset="60%" stop-color="#121210"/>
+      <stop offset="100%" stop-color="#0B0B09"/>
+    </linearGradient>
+    <pattern id="civ-grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(216,211,200,0.06)" stroke-width="0.8"/>
+    </pattern>
+  </defs>
+
+  <rect width="800" height="450" fill="url(#civ-sky)"/>
+  <rect width="800" height="450" fill="url(#civ-grid)"/>
+
+  <line x1="50" y1="50" x2="750" y2="50" stroke="rgba(216,211,200,0.15)" stroke-width="1" stroke-dasharray="2 4"/>
+  <line x1="50" y1="400" x2="750" y2="400" stroke="rgba(216,211,200,0.2)" stroke-width="1"/>
+
+  <!-- Highway Bypass Corridor Isometric Geometry -->
+  <g stroke="#0D6847" stroke-width="2" fill="none">
+    <!-- North-South 4-Lane Express Corridor -->
+    <path d="M 100 380 L 320 200 L 700 200"/>
+    <path d="M 120 400 L 340 220 L 700 220"/>
+    <!-- Lane Divider -->
+    <path d="M 110 390 L 330 210 L 700 210" stroke="#FF4F17" stroke-width="1.2" stroke-dasharray="8 6"/>
+  </g>
+
+  <!-- Survey Triangulation Markers & Contour Lines -->
+  <g stroke="rgba(216,211,200,0.15)" stroke-width="1" fill="none">
+    <ellipse cx="480" cy="210" rx="140" ry="60"/>
+    <ellipse cx="480" cy="210" rx="200" ry="90"/>
+    <circle cx="320" cy="200" r="6" fill="#0D6847"/>
+    <circle cx="500" cy="200" r="6" fill="#0D6847"/>
+    <circle cx="680" cy="200" r="6" fill="#0D6847"/>
+  </g>
+
+  <!-- Flyover Bridge Pillar Elevators -->
+  <g fill="#20201D" stroke="rgba(216,211,200,0.3)" stroke-width="1.2">
+    <rect x="290" y="220" width="24" height="140"/>
+    <rect x="470" y="220" width="24" height="140"/>
+    <rect x="650" y="220" width="24" height="140"/>
+  </g>
+
+  <!-- Blueprint Coordinates & Project Details -->
+  <g font-family="monospace" font-size="9" fill="rgba(244,242,238,0.7)" letter-spacing="1.5">
+    <text x="60" y="75">CIVIC PULSE 09 // 4-LANE SOUTHERN BYPASS &amp; FREIGHT CORRIDOR</text>
+    <text x="60" y="95" font-size="8" fill="#8B877F">NH-42 JUNCTION CONNECTIVITY · PHASE 2 UNDER SURVEY · AP R&amp;B DEPT</text>
+    <text x="740" y="75" text-anchor="end" fill="#0D6847" font-weight="700">CONFIRMED FACT</text>
+    <text x="740" y="95" text-anchor="end" font-size="8" fill="#8B877F">GOVT SANCTION: INR 48.2 CR</text>
+  </g>
+</svg>

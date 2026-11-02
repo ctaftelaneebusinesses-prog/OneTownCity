@@ -1,0 +1,61 @@
+<svg width="800" height="450" viewBox="0 0 800 450" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bk-sky" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1A1816"/>
+      <stop offset="50%" stop-color="#141211"/>
+      <stop offset="100%" stop-color="#0E0D0C"/>
+    </linearGradient>
+    <pattern id="bk-grid" width="30" height="30" patternUnits="userSpaceOnUse">
+      <path d="M 30 0 L 0 0 0 30" fill="none" stroke="rgba(216,211,200,0.06)" stroke-width="0.8"/>
+    </pattern>
+  </defs>
+
+  <rect width="800" height="450" fill="url(#bk-sky)"/>
+  <rect width="800" height="450" fill="url(#bk-grid)"/>
+
+  <line x1="50" y1="50" x2="750" y2="50" stroke="rgba(216,211,200,0.15)" stroke-width="1" stroke-dasharray="2 4"/>
+  <line x1="50" y1="400" x2="750" y2="400" stroke="rgba(216,211,200,0.2)" stroke-width="1"/>
+
+  <!-- Bookstore Main Facade -->
+  <rect x="120" y="140" width="560" height="260" fill="#1B1917" stroke="rgba(216,211,200,0.2)" stroke-width="1.2"/>
+
+  <!-- Archival Bookstack Columns -->
+  <g fill="#24211E" stroke="rgba(216,211,200,0.2)" stroke-width="1">
+    <rect x="150" y="170" width="100" height="200"/>
+    <line x1="150" y1="210" x2="250" y2="210"/>
+    <line x1="150" y1="250" x2="250" y2="250"/>
+    <line x1="150" y1="290" x2="250" y2="290"/>
+    <line x1="150" y1="330" x2="250" y2="330"/>
+
+    <rect x="550" y="170" width="100" height="200"/>
+    <line x1="550" y1="210" x2="650" y2="210"/>
+    <line x1="550" y1="250" x2="650" y2="250"/>
+    <line x1="550" y1="290" x2="650" y2="290"/>
+    <line x1="550" y1="330" x2="650" y2="330"/>
+  </g>
+
+  <!-- Central Study Lounge & Reading Mezzanine -->
+  <rect x="280" y="120" width="240" height="280" fill="#201D1A" stroke="#FF4F17" stroke-width="1.5"/>
+  <rect x="310" y="160" width="180" height="70" fill="#161413" stroke="rgba(216,211,200,0.3)" stroke-width="1"/>
+  
+  <text x="400" y="195" fill="#FF4F17" font-family="'Instrument Serif', serif, Georgia" font-size="20" font-weight="400" text-anchor="middle" letter-spacing="1">MINERVA</text>
+  <text x="400" y="215" fill="#8B877F" font-family="monospace" font-size="8" text-anchor="middle" letter-spacing="2">BOOKSTORE &amp; STUDY LOUNGE</text>
+
+  <!-- Reading Desk & Lamp Silhouettes -->
+  <g stroke="#D97706" stroke-width="1.2">
+    <line x1="330" y1="330" x2="470" y2="330" stroke-width="2"/>
+    <line x1="350" y1="330" x2="350" y2="380"/>
+    <line x1="450" y1="330" x2="450" y2="380"/>
+    <!-- Lamp -->
+    <path d="M 390 330 L 390 290 Q 400 280 410 290" fill="none"/>
+    <polygon points="405,285 415,285 420,295 400,295" fill="#D97706"/>
+  </g>
+
+  <!-- Metadata -->
+  <g font-family="monospace" font-size="9" fill="rgba(244,242,238,0.7)" letter-spacing="1.5">
+    <text x="60" y="75">COMMERCE 07 // MINERVA BOOKSTORE &amp; ACADEMIC STUDY CAFE</text>
+    <text x="60" y="95" font-size="8" fill="#8B877F">COMPETITIVE EXAM TEXTS · ENGINEERING REFERENCE · SILENT ZONE</text>
+    <text x="740" y="75" text-anchor="end" fill="#0D6847" font-weight="700">OWNER CLAIMED</text>
+    <text x="740" y="95" text-anchor="end" font-size="8" fill="#8B877F">TRUNK ROAD, NELLORE</text>
+  </g>
+</svg>

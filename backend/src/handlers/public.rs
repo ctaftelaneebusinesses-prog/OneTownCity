@@ -135,10 +135,7 @@ pub async fn get_listing(
     let listing = sqlx::query_as!(
         Listing,
         r#"
-        UPDATE listings
-        SET view_count = view_count + 1
-        WHERE slug = $1 AND moderation_status = 'approved'
-        RETURNING 
+        SELECT 
             id, tenant_id, category_id, vertical as "vertical: VerticalType",
             slug, name, tagline, description, address, locality, city,
             phone, whatsapp, website, email, operating_hours, facilities,
@@ -147,6 +144,8 @@ pub async fn get_listing(
             moderation_status as "moderation_status: _",
             rejection_reason, view_count, whatsapp_clicks, call_clicks,
             last_confirmed_at, created_at, updated_at
+        FROM listings
+        WHERE slug = $1 AND moderation_status = 'approved'
         "#,
         slug
     )
@@ -161,7 +160,21 @@ pub async fn get_listing(
     })?;
 
     match listing {
-        Some(item) => Ok(Json(item)),
+        Some(item) => {
+            // Asynchronously increment view count without blocking read thread
+            let item_id = item.id;
+            let pool = state.db.clone();
+            tokio::spawn(async move {
+                let _ = sqlx::query!(
+                    "UPDATE listings SET view_count = view_count + 1 WHERE id = $1",
+                    item_id
+                )
+                .execute(&pool)
+                .await;
+            });
+
+            Ok(Json(item))
+        }
         None => Err((
             StatusCode::NOT_FOUND,
             Json(json!({ "error": "Listing not found" })),
@@ -325,6 +338,23 @@ pub async fn create_enquiry(
     )
     .execute(&state.db)
     .await;
+
+    // 4. Enqueue background audit log & simulated notification
+    state.worker.enqueue(crate::worker::AuditJob {
+        entity_type: "enquiry".to_string(),
+        entity_id: enquiry_id.to_string(),
+        action: "created".to_string(),
+        actor_id: None,
+        actor_role: "public_resident".to_string(),
+        payload: json!({
+            "listing_id": dto.listing_id,
+            "listing_name": listing.name,
+            "tenant_id": listing.tenant_id,
+            "inquirer_name": dto.inquirer_name,
+            "enquiry_type": format!("{:?}", dto.enquiry_type),
+        }),
+        simulate_dispatch: true,
+    });
 
     Ok((
         StatusCode::CREATED,

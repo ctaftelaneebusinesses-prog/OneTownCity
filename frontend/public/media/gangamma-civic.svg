@@ -1,0 +1,63 @@
+<svg width="800" height="450" viewBox="0 0 800 450" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="gang-bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1A1816"/>
+      <stop offset="60%" stop-color="#141211"/>
+      <stop offset="100%" stop-color="#0E0D0C"/>
+    </linearGradient>
+    <pattern id="gang-grid" width="36" height="36" patternUnits="userSpaceOnUse">
+      <path d="M 36 0 L 0 0 0 36" fill="none" stroke="rgba(216,211,200,0.06)" stroke-width="0.8"/>
+    </pattern>
+  </defs>
+
+  <rect width="800" height="450" fill="url(#gang-bg)"/>
+  <rect width="800" height="450" fill="url(#gang-grid)"/>
+
+  <!-- Heritage Gateway Lines -->
+  <line x1="50" y1="50" x2="750" y2="50" stroke="rgba(216,211,200,0.15)" stroke-width="1" stroke-dasharray="2 4"/>
+  <line x1="50" y1="400" x2="750" y2="400" stroke="rgba(216,211,200,0.2)" stroke-width="1"/>
+
+  <!-- Stepped Gopuram Tier Geometry (Stepped Pyramid Temple Architecture) -->
+  <polygon points="400,60 360,110 440,110" fill="#24201D" stroke="#D97706" stroke-width="1.5"/>
+  <polygon points="400,105 330,165 470,165" fill="#1F1C19" stroke="rgba(216,211,200,0.3)" stroke-width="1.2"/>
+  <polygon points="400,160 300,225 500,225" fill="#1A1715" stroke="rgba(216,211,200,0.3)" stroke-width="1.2"/>
+  <polygon points="400,220 270,290 530,290" fill="#171513" stroke="rgba(216,211,200,0.3)" stroke-width="1.2"/>
+  <polygon points="400,285 240,360 560,360" fill="#141210" stroke="rgba(216,211,200,0.3)" stroke-width="1.2"/>
+
+  <!-- Sanctum Base Structure -->
+  <rect x="200" y="360" width="400" height="40" fill="#221E1B" stroke="rgba(216,211,200,0.4)" stroke-width="1.5"/>
+  <rect x="360" y="320" width="80" height="80" fill="#0E0D0C" stroke="#D97706" stroke-width="1.5"/>
+  
+  <!-- Sacred Kalasam Finials on Crest -->
+  <circle cx="400" cy="50" r="5" fill="#D97706"/>
+  <line x1="400" y1="42" x2="400" y2="55" stroke="#D97706" stroke-width="2"/>
+  <circle cx="390" cy="55" r="3.5" fill="rgba(217,119,6,0.6)"/>
+  <circle cx="410" cy="55" r="3.5" fill="rgba(217,119,6,0.6)"/>
+
+  <!-- Radial Festival Linework (Jatara Procession Concourse) -->
+  <g stroke="rgba(217,119,6,0.15)" stroke-width="1">
+    <line x1="400" y1="400" x2="100" y2="440"/>
+    <line x1="400" y1="400" x2="250" y2="440"/>
+    <line x1="400" y1="400" x2="550" y2="440"/>
+    <line x1="400" y1="400" x2="700" y2="440"/>
+  </g>
+
+  <!-- Flanking Traditional Lamp Pillars (Deepa Stambha) -->
+  <g stroke="rgba(216,211,200,0.3)" stroke-width="1.2" fill="#1A1816">
+    <rect x="140" y="240" width="24" height="160"/>
+    <polygon points="152,210 135,240 169,240"/>
+    <circle cx="152" cy="205" r="4" fill="#D97706"/>
+
+    <rect x="636" y="240" width="24" height="160"/>
+    <polygon points="648,210 631,240 665,240"/>
+    <circle cx="648" cy="205" r="4" fill="#D97706"/>
+  </g>
+
+  <!-- Civic & Cultural Metadata -->
+  <g font-family="monospace" font-size="9" fill="rgba(244,242,238,0.7)" letter-spacing="1.5">
+    <text x="60" y="75">HERITAGE CIVIC 01 // GANGAMMA TEMPLE &amp; JATARA CONCOURSE</text>
+    <text x="60" y="95" font-size="8" fill="#8B877F">ANNUAL CIVIC CONGREGATION · KUPPAM TOWN BAZAAR</text>
+    <text x="740" y="75" text-anchor="end" fill="#D97706" font-weight="700">CONFIRMED HERITAGE SITE</text>
+    <text x="740" y="95" text-anchor="end" font-size="8" fill="#8B877F">MUNICIPAL WARD 04</text>
+  </g>
+</svg>

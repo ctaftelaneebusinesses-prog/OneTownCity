@@ -1,0 +1,63 @@
+<svg width="800" height="450" viewBox="0 0 800 450" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="hosp-sky" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#141917"/>
+      <stop offset="60%" stop-color="#0F1412"/>
+      <stop offset="100%" stop-color="#090D0B"/>
+    </linearGradient>
+    <pattern id="hosp-grid" width="32" height="32" patternUnits="userSpaceOnUse">
+      <path d="M 32 0 L 0 0 0 32" fill="none" stroke="rgba(13,104,71,0.08)" stroke-width="0.8"/>
+    </pattern>
+  </defs>
+
+  <rect width="800" height="450" fill="url(#hosp-sky)"/>
+  <rect width="800" height="450" fill="url(#hosp-grid)"/>
+
+  <!-- Hairlines -->
+  <line x1="50" y1="50" x2="750" y2="50" stroke="rgba(216,211,200,0.15)" stroke-width="1" stroke-dasharray="2 4"/>
+  <line x1="50" y1="400" x2="750" y2="400" stroke="rgba(216,211,200,0.2)" stroke-width="1"/>
+
+  <!-- Hospital Main Medical Complex Block -->
+  <rect x="100" y="130" width="600" height="270" fill="#161C19" stroke="rgba(216,211,200,0.18)" stroke-width="1.2"/>
+
+  <!-- Emergency / Trauma Pavilion Tower -->
+  <rect x="100" y="90" width="160" height="310" fill="#1B2420" stroke="#0D6847" stroke-width="1.5"/>
+
+  <!-- Botanical Jade Medical Cross Emblem -->
+  <g fill="#0D6847">
+    <rect x="165" y="120" width="30" height="10" rx="2"/>
+    <rect x="175" y="110" width="10" height="30" rx="2"/>
+  </g>
+  <text x="180" y="160" fill="#0D6847" font-family="monospace" font-size="9" font-weight="700" text-anchor="middle" letter-spacing="2">24H EMERGENCY</text>
+
+  <!-- Inpatient Ward Horizontal Ribbon Windows -->
+  <g stroke="rgba(216,211,200,0.2)" stroke-width="1">
+    <line x1="280" y1="170" x2="680" y2="170"/>
+    <line x1="280" y1="210" x2="680" y2="210"/>
+    <line x1="280" y1="250" x2="680" y2="250"/>
+    <line x1="280" y1="290" x2="680" y2="290"/>
+    <line x1="280" y1="330" x2="680" y2="330"/>
+  </g>
+
+  <!-- Vertical Solar Louvers -->
+  <g stroke="rgba(13,104,71,0.2)" stroke-width="1">
+    <line x1="330" y1="130" x2="330" y2="360"/>
+    <line x1="390" y1="130" x2="390" y2="360"/>
+    <line x1="450" y1="130" x2="450" y2="360"/>
+    <line x1="510" y1="130" x2="510" y2="360"/>
+    <line x1="570" y1="130" x2="570" y2="360"/>
+    <line x1="630" y1="130" x2="630" y2="360"/>
+  </g>
+
+  <!-- Ambulance Drop-off Canopy -->
+  <polygon points="260,350 480,350 500,400 240,400" fill="#1E2723" stroke="#0D6847" stroke-width="1.2"/>
+  <line x1="250" y1="375" x2="490" y2="375" stroke="#0D6847" stroke-width="2"/>
+
+  <!-- Healthcare Metadata -->
+  <g font-family="monospace" font-size="9" fill="rgba(244,242,238,0.7)" letter-spacing="1.5">
+    <text x="60" y="75">HEALTHCARE 04 // REGIONAL MULTI-SPECIALTY MEDICAL CENTER</text>
+    <text x="60" y="95" font-size="8" fill="#8B877F">ICU · TRAUMA CARE · DIAGNOSTIC PATHOLOGY · PHARMACY</text>
+    <text x="740" y="75" text-anchor="end" fill="#0D6847" font-weight="700">NABH ACCREDITED</text>
+    <text x="740" y="95" text-anchor="end" font-size="8" fill="#8B877F">HELI-EVAC CAPABLE</text>
+  </g>
+</svg>

@@ -1,0 +1,67 @@
+<svg width="800" height="450" viewBox="0 0 800 450" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="cafe-sky" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1A1816"/>
+      <stop offset="50%" stop-color="#141211"/>
+      <stop offset="100%" stop-color="#0E0D0C"/>
+    </linearGradient>
+    <pattern id="cafe-grid" width="30" height="30" patternUnits="userSpaceOnUse">
+      <path d="M 30 0 L 0 0 0 30" fill="none" stroke="rgba(216,211,200,0.06)" stroke-width="0.8"/>
+    </pattern>
+  </defs>
+
+  <rect width="800" height="450" fill="url(#cafe-sky)"/>
+  <rect width="800" height="450" fill="url(#cafe-grid)"/>
+
+  <line x1="50" y1="50" x2="750" y2="50" stroke="rgba(216,211,200,0.15)" stroke-width="1" stroke-dasharray="2 4"/>
+  <line x1="50" y1="400" x2="750" y2="400" stroke="rgba(216,211,200,0.2)" stroke-width="1"/>
+
+  <!-- Cafe Facade Structure -->
+  <rect x="130" y="130" width="540" height="270" fill="#1C1A18" stroke="rgba(216,211,200,0.2)" stroke-width="1.2"/>
+
+  <!-- Panoramic Glass Storefront -->
+  <rect x="160" y="170" width="480" height="210" fill="#141311" stroke="rgba(216,211,200,0.3)" stroke-width="1"/>
+  <line x1="320" y1="170" x2="320" y2="380" stroke="rgba(216,211,200,0.2)"/>
+  <line x1="480" y1="170" x2="480" y2="380" stroke="rgba(216,211,200,0.2)"/>
+
+  <!-- Barista Espresso Bar & Counter -->
+  <rect x="180" y="270" width="120" height="90" fill="#24211E" stroke="#FF4F17" stroke-width="1.2"/>
+  <line x1="180" y1="270" x2="300" y2="270" stroke="#FF4F17" stroke-width="2"/>
+  
+  <!-- Communal Study Tables & Chairs Silhouette -->
+  <g stroke="rgba(216,211,200,0.4)" stroke-width="1.2">
+    <!-- Table 1 -->
+    <line x1="350" y1="310" x2="450" y2="310" stroke-width="2"/>
+    <line x1="370" y1="310" x2="370" y2="360"/>
+    <line x1="430" y1="310" x2="430" y2="360"/>
+
+    <!-- Table 2 -->
+    <line x1="510" y1="310" x2="610" y2="310" stroke-width="2"/>
+    <line x1="530" y1="310" x2="530" y2="360"/>
+    <line x1="590" y1="310" x2="590" y2="360"/>
+  </g>
+
+  <!-- Warm Minimalist Pendant Lighting -->
+  <g stroke="#D97706" stroke-width="1">
+    <line x1="240" y1="170" x2="240" y2="210"/>
+    <circle cx="240" cy="214" r="4" fill="#D97706"/>
+
+    <line x1="400" y1="170" x2="400" y2="220"/>
+    <circle cx="400" cy="224" r="5" fill="#D97706"/>
+
+    <line x1="560" y1="170" x2="560" y2="220"/>
+    <circle cx="560" cy="224" r="5" fill="#D97706"/>
+  </g>
+
+  <!-- Cafe Header Typography -->
+  <rect x="300" y="95" width="200" height="45" fill="#201E1B" stroke="#FF4F17" stroke-width="1.2"/>
+  <text x="400" y="123" fill="#F4F2EE" font-family="'Instrument Serif', serif, Georgia" font-size="18" text-anchor="middle" letter-spacing="2">STUDY CORNER CAFE</text>
+
+  <!-- Metadata -->
+  <g font-family="monospace" font-size="9" fill="rgba(244,242,238,0.7)" letter-spacing="1.5">
+    <text x="60" y="75">COMMERCE 08 // ARTISAN STUDY CAFE &amp; STUDENT LOUNGE</text>
+    <text x="60" y="95" font-size="8" fill="#8B877F">FIBER WI-FI · DESK POWER PORTS · FILTER COFFEE · SILENT WORKPODS</text>
+    <text x="740" y="75" text-anchor="end" fill="#0D6847" font-weight="700">DETAILS REVIEWED</text>
+    <text x="740" y="95" text-anchor="end" font-size="8" fill="#8B877F">RAMA MURTHY NAGAR</text>
+  </g>
+</svg>
