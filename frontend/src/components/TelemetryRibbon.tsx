@@ -44,11 +44,11 @@ export function TelemetryRibbon() {
 
         {/* Student protection */}
         <span
-          className="font-mono shrink-0 flex items-center gap-1.5"
+          className="font-mono flex items-center gap-1.5 min-w-0"
           style={{ color: "var(--accent-signal)" }}
         >
           <span className="shrink-0">!</span>
-          <span>STUDENT PROTECTION LEDGER: ZERO APPLICATION FEES PERMITTED — NEVER PAY TO APPLY</span>
+          <span className="truncate">STUDENT PROTECTION LEDGER: ZERO APPLICATION FEES PERMITTED — NEVER PAY TO APPLY</span>
         </span>
       </div>
 

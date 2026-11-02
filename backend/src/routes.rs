@@ -9,17 +9,23 @@ use crate::handlers::{admin, auth, public, saas, submissions};
 use crate::middleware::{no_cache_headers, public_cache_headers, rate_limit};
 
 pub fn api_router(state: Arc<AppState>) -> Router<Arc<AppState>> {
-    // 1. Authentication & Session Management (rate-limited: 10 req/min/IP, private no-store)
-    let auth_routes = Router::new()
+    // 1. Authentication & Session Management (brute-force rate-limited: 10 req/min/IP for login/register; private no-store)
+    let sensitive_auth = Router::new()
         .route("/register", post(auth::register))
         .route("/login", post(auth::login))
-        .route("/logout", post(auth::logout))
-        .route("/me", get(auth::get_me))
-        .route("/sessions/{id}", delete(auth::revoke_session))
         .layer(axum::middleware::from_fn_with_state(
             state.clone(),
             rate_limit::auth_rate_limit,
-        ))
+        ));
+
+    let session_auth = Router::new()
+        .route("/logout", post(auth::logout))
+        .route("/me", get(auth::get_me))
+        .route("/sessions/{id}", delete(auth::revoke_session));
+
+    let auth_routes = Router::new()
+        .merge(sensitive_auth)
+        .merge(session_auth)
         .layer(axum::middleware::from_fn(no_cache_headers));
 
     // 2. Ownership Claims & Category Extensions (private no-store)

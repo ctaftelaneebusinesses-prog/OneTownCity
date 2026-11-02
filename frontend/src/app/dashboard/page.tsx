@@ -239,8 +239,8 @@ export default function TenantDashboard() {
     <div style={{ minHeight: "100vh", background: T.canvas, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
 
       {/* ── Top Banner ─────────────────────────────────────────── */}
-      <header style={{ background: T.rail, borderBottom: `1px solid ${T.border}`, padding: "14px 32px" }}>
-        <div style={{ maxWidth: 1280, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
+      <header className="w-full border-b px-4 sm:px-8 py-3.5" style={{ background: T.rail, borderColor: T.border }}>
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4 w-full">
 
           {/* Left: wordmark + org */}
           <div>
@@ -253,7 +253,7 @@ export default function TenantDashboard() {
           </div>
 
           {/* Right: persona switcher + CTA */}
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <div className="flex flex-wrap items-center gap-3">
             {/* Persona pill toggle */}
             <div style={{ display: "flex", border: `1px solid #333330`, borderRadius: 6, overflow: "hidden" }}>
               {(["education", "business"] as const).map((p) => (
@@ -307,10 +307,10 @@ export default function TenantDashboard() {
       </header>
 
       {/* ── Body: Rail + Main ──────────────────────────────────── */}
-      <div style={{ maxWidth: 1280, margin: "0 auto", display: "grid", gridTemplateColumns: "300px 1fr", gap: 0, minHeight: "calc(100vh - 61px)" }}>
+      <div className="w-full max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-[280px_1fr] min-h-[calc(100vh-61px)] overflow-x-hidden">
 
         {/* ── LEFT RAIL ─────────────────────────────────────────── */}
-        <aside style={{ background: T.rail, borderRight: `1px solid #222220`, padding: "28px 20px", display: "flex", flexDirection: "column", gap: 28 }}>
+        <aside className="w-full p-5 sm:p-7 flex flex-col gap-6 border-b lg:border-b-0 lg:border-r" style={{ background: T.rail, borderColor: "#222220" }}>
 
           {/* Section label */}
           <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.18em", color: T.inkTert }}>
@@ -430,10 +430,10 @@ export default function TenantDashboard() {
         </aside>
 
         {/* ── MAIN CONTENT ──────────────────────────────────────── */}
-        <main style={{ padding: "28px 28px", display: "flex", flexDirection: "column", gap: 20 }}>
+        <main className="p-4 sm:p-7 flex flex-col gap-5 w-full min-w-0 overflow-x-hidden">
 
           {/* 4 KPI cards */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 w-full">
             {[
               { label: "Profile Views",        value: metrics?.total_views || 0,            note: "+14% discovery",       icon: <Eye size={14} color={T.inkTert} />,         noteColor: T.verified },
               { label: "WhatsApp Leads",        value: metrics?.total_whatsapp_clicks || 0,  note: "+22% chat routing",    icon: <MessageSquare size={14} color={T.verified} />, noteColor: T.verified },
@@ -464,7 +464,7 @@ export default function TenantDashboard() {
           {/* Lead Inbox */}
           <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: 4, overflow: "hidden" }}>
             {/* Inbox header */}
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 16px", borderBottom: `1px solid ${T.border}` }}>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between p-3.5 sm:p-4 gap-3 border-b" style={{ borderColor: T.border }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <ArrowUpRight size={14} color={T.inkTert} />
                 <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: T.inkPrim }}>
@@ -497,95 +497,100 @@ export default function TenantDashboard() {
               </div>
             </div>
 
-            {/* Table header row */}
-            <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr 1.2fr 90px 90px", padding: "8px 16px", borderBottom: `1px solid ${T.border}`, background: T.muted }}>
-              {["Inquirer", "Type", "Message", "Date", "Status"].map((h) => (
-                <span key={h} style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: T.inkTert }}>
-                  {h}
-                </span>
-              ))}
-            </div>
-
-            {/* Rows */}
-            {isLoading ? (
-              <div style={{ padding: 40, textAlign: "center", fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: T.inkTert, textTransform: "uppercase" }}>
-                Loading leads...
-              </div>
-            ) : filteredLeads.length === 0 ? (
-              <div style={{ padding: 40, textAlign: "center", fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: T.inkTert, textTransform: "uppercase" }}>
-                No leads matching current filter.
-              </div>
-            ) : (
-              filteredLeads.map((lead, idx) => (
-                <div
-                  key={lead.id}
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "1.4fr 1fr 1.2fr 90px 90px",
-                    padding: "12px 16px",
-                    borderBottom: idx < filteredLeads.length - 1 ? `1px solid ${T.border}` : "none",
-                    alignItems: "center",
-                    gap: 8,
-                  }}
-                >
-                  {/* Inquirer */}
-                  <div>
-                    <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 12, fontWeight: 700, color: T.inkPrim }}>{lead.inquirer_name}</div>
-                    <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: T.inkTert, marginTop: 2 }}>{lead.inquirer_phone}</div>
-                  </div>
-
-                  {/* Type */}
-                  <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 700, color: T.inkSec, textTransform: "uppercase" }}>
-                    {lead.enquiry_type.replace(/_/g, " ")}
-                  </div>
-
-                  {/* Message */}
-                  <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 12, color: T.inkSec, lineHeight: 1.5, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" as const }}>
-                    {lead.message}
-                  </div>
-
-                  {/* Date */}
-                  <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: T.inkTert }}>
-                    {new Date(lead.created_at).toISOString().split("T")[0]}
-                  </div>
-
-                  {/* Status + action */}
-                  <div style={{ display: "flex", flexDirection: "column", gap: 5, alignItems: "flex-start" }}>
-                    <span
-                      style={{
-                        fontFamily: "'JetBrains Mono', monospace",
-                        fontSize: 10,
-                        fontWeight: 700,
-                        textTransform: "uppercase",
-                        padding: "2px 7px",
-                        borderRadius: 3,
-                        background: lead.status === "open" ? T.sponsored : T.verified,
-                        color: "#FFFFFF",
-                      }}
-                    >
-                      {lead.status}
+            {/* Table wrapper for horizontal scrolling on narrow screens */}
+            <div className="w-full overflow-x-auto">
+              <div className="min-w-[560px]">
+                {/* Table header row */}
+                <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr 1.2fr 90px 90px", padding: "8px 16px", borderBottom: `1px solid ${T.border}`, background: T.muted }}>
+                  {["Inquirer", "Type", "Message", "Date", "Status"].map((h) => (
+                    <span key={h} style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: T.inkTert }}>
+                      {h}
                     </span>
-                    <button
-                      onClick={() => toggleLeadStatus(lead.id, lead.status)}
+                  ))}
+                </div>
+
+                {/* Rows */}
+                {isLoading ? (
+                  <div style={{ padding: 40, textAlign: "center", fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: T.inkTert, textTransform: "uppercase" }}>
+                    Loading leads...
+                  </div>
+                ) : filteredLeads.length === 0 ? (
+                  <div style={{ padding: 40, textAlign: "center", fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: T.inkTert, textTransform: "uppercase" }}>
+                    No leads matching current filter.
+                  </div>
+                ) : (
+                  filteredLeads.map((lead, idx) => (
+                    <div
+                      key={lead.id}
                       style={{
-                        fontFamily: "'JetBrains Mono', monospace",
-                        fontSize: 9,
-                        fontWeight: 700,
-                        textTransform: "uppercase",
-                        padding: "3px 7px",
-                        border: `1px solid ${T.border}`,
-                        borderRadius: 3,
-                        background: "transparent",
-                        color: T.inkSec,
-                        cursor: "pointer",
+                        display: "grid",
+                        gridTemplateColumns: "1.4fr 1fr 1.2fr 90px 90px",
+                        padding: "12px 16px",
+                        borderBottom: idx < filteredLeads.length - 1 ? `1px solid ${T.border}` : "none",
+                        alignItems: "center",
+                        gap: 8,
                       }}
                     >
-                      {lead.status === "open" ? "Mark Responded" : "Reopen"}
-                    </button>
-                  </div>
-                </div>
-              ))
-            )}
+                      {/* Inquirer */}
+                      <div>
+                        <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 12, fontWeight: 700, color: T.inkPrim }}>{lead.inquirer_name}</div>
+                        <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: T.inkTert, marginTop: 2 }}>{lead.inquirer_phone}</div>
+                      </div>
+
+                      {/* Type */}
+                      <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, fontWeight: 700, color: T.inkSec, textTransform: "uppercase" }}>
+                        {lead.enquiry_type.replace(/_/g, " ")}
+                      </div>
+
+                      {/* Message */}
+                      <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 12, color: T.inkSec, lineHeight: 1.5, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" as const }}>
+                        {lead.message}
+                      </div>
+
+                      {/* Date */}
+                      <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: T.inkTert }}>
+                        {new Date(lead.created_at).toISOString().split("T")[0]}
+                      </div>
+
+                      {/* Status + action */}
+                      <div style={{ display: "flex", flexDirection: "column", gap: 5, alignItems: "flex-start" }}>
+                        <span
+                          style={{
+                            fontFamily: "'JetBrains Mono', monospace",
+                            fontSize: 10,
+                            fontWeight: 700,
+                            textTransform: "uppercase",
+                            padding: "2px 7px",
+                            borderRadius: 3,
+                            background: lead.status === "open" ? T.sponsored : T.verified,
+                            color: "#FFFFFF",
+                          }}
+                        >
+                          {lead.status}
+                        </span>
+                        <button
+                          onClick={() => toggleLeadStatus(lead.id, lead.status)}
+                          style={{
+                            fontFamily: "'JetBrains Mono', monospace",
+                            fontSize: 9,
+                            fontWeight: 700,
+                            textTransform: "uppercase",
+                            padding: "3px 7px",
+                            border: `1px solid ${T.border}`,
+                            borderRadius: 3,
+                            background: "transparent",
+                            color: T.inkSec,
+                            cursor: "pointer",
+                          }}
+                        >
+                          {lead.status === "open" ? "Mark Responded" : "Reopen"}
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
           </div>
         </main>
       </div>
@@ -606,7 +611,7 @@ export default function TenantDashboard() {
               top: 0,
               right: 0,
               bottom: 0,
-              width: 420,
+              width: "min(420px, 100vw)",
               background: T.surface,
               borderLeft: `1px solid ${T.border}`,
               display: "flex",

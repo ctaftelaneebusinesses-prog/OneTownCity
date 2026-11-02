@@ -31,6 +31,36 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 1.0,
     },
     {
+      url: `${SITE_URL}/pricing`,
+      lastModified: new Date(),
+      changeFrequency: "weekly",
+      priority: 0.9,
+    },
+    {
+      url: `${SITE_URL}/trust`,
+      lastModified: new Date(),
+      changeFrequency: "monthly",
+      priority: 0.8,
+    },
+    {
+      url: `${SITE_URL}/submit`,
+      lastModified: new Date(),
+      changeFrequency: "weekly",
+      priority: 0.8,
+    },
+    {
+      url: `${SITE_URL}/login`,
+      lastModified: new Date(),
+      changeFrequency: "monthly",
+      priority: 0.5,
+    },
+    {
+      url: `${SITE_URL}/register`,
+      lastModified: new Date(),
+      changeFrequency: "monthly",
+      priority: 0.5,
+    },
+    {
       url: `${SITE_URL}/architecture`,
       lastModified: new Date(),
       changeFrequency: "weekly",
@@ -60,24 +90,28 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     if (newsRes.status === "fulfilled" && newsRes.value.ok) {
       const news = (await newsRes.value.json()) as NewsItem[];
       for (const item of news) {
-        routes.push({
-          url: `${SITE_URL}/#news-${item.slug || item.id}`,
-          lastModified: item.updated_at ? new Date(item.updated_at) : new Date(),
-          changeFrequency: "daily",
-          priority: 0.7,
-        });
+        if (item.slug) {
+          routes.push({
+            url: `${SITE_URL}/news/${item.slug}`,
+            lastModified: item.updated_at ? new Date(item.updated_at) : new Date(),
+            changeFrequency: "daily",
+            priority: 0.7,
+          });
+        }
       }
     }
 
     if (oppsRes.status === "fulfilled" && oppsRes.value.ok) {
       const opps = (await oppsRes.value.json()) as OpportunityItem[];
       for (const item of opps) {
-        routes.push({
-          url: `${SITE_URL}/#opportunity-${item.slug || item.id}`,
-          lastModified: item.created_at ? new Date(item.created_at) : new Date(),
-          changeFrequency: "daily",
-          priority: 0.7,
-        });
+        if (item.id) {
+          routes.push({
+            url: `${SITE_URL}/students/${item.id}`,
+            lastModified: item.created_at ? new Date(item.created_at) : new Date(),
+            changeFrequency: "daily",
+            priority: 0.7,
+          });
+        }
       }
     }
   } catch (err) {

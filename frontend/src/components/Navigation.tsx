@@ -27,13 +27,13 @@ export function Navigation() {
 
   return (
     <header
-      className="sticky top-0 z-40 border-b"
+      className="sticky top-0 z-40 border-b w-full overflow-x-clip"
       style={{
         backgroundColor: "var(--bg-surface)",
         borderColor: "var(--border-grid)",
       }}
     >
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-4 sm:px-6 h-[52px] gap-4">
+      <div className="mx-auto flex max-w-7xl items-center justify-between px-3 sm:px-6 h-[52px] gap-2 sm:gap-4 w-full">
 
         {/* Brand mark */}
         <Link
@@ -65,14 +65,15 @@ export function Navigation() {
         </Link>
 
         {/* Main nav links */}
-        <nav className="flex items-center gap-1 flex-1 justify-center" aria-label="Main navigation">
+        <nav className="flex items-center gap-0.5 sm:gap-1 flex-1 justify-center overflow-hidden" aria-label="Main navigation">
           {navLinks.map(({ href, label, icon: Icon, exact }) => {
             const active = isActive(href, exact);
+            const isSecondary = href === "/architecture" || href === "/trust";
             return (
               <Link
                 key={href}
                 href={href}
-                className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded transition-colors pressable font-mono uppercase"
+                className={`${isSecondary ? "hidden md:flex" : "flex"} items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded transition-colors pressable font-mono uppercase shrink-0`}
                 style={{
                   fontSize: "11px",
                   fontWeight: 600,
@@ -93,11 +94,11 @@ export function Navigation() {
         </nav>
 
         {/* Right: Town switcher + Submit + Spotlight trigger */}
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           {/* Submit / Contribute CTA */}
           <Link
             href="/submit"
-            className="flex items-center gap-1.5 rounded px-2.5 py-1.5 border pressable font-mono text-[11px] font-semibold uppercase tracking-wider transition-all"
+            className="hidden sm:flex items-center gap-1.5 rounded px-2.5 py-1.5 border pressable font-mono text-[11px] font-semibold uppercase tracking-wider transition-all"
             style={{
               borderColor: "var(--accent-signal)",
               backgroundColor: "rgba(255, 79, 23, 0.08)",
