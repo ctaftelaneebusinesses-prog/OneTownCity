@@ -44,6 +44,8 @@ pub fn api_router(state: Arc<AppState>) -> Router<Arc<AppState>> {
 
     // 3. Public Directory Read Endpoints (public caching enabled)
     let public_reads = Router::new()
+        .route("/homepage", get(public::get_homepage))
+        .route("/public-services", get(public::list_public_services))
         .route("/listings", get(public::list_listings))
         .route("/listings/{slug}", get(public::get_listing))
         .route("/news", get(public::list_news))
@@ -68,13 +70,16 @@ pub fn api_router(state: Arc<AppState>) -> Router<Arc<AppState>> {
         .layer(axum::middleware::from_fn(no_cache_headers));
 
     // 5. Telemetry & Analytics
-    let telemetry_routes = Router::new().route("/telemetry/click", post(public::record_click));
+    let telemetry_routes = Router::new()
+        .route("/telemetry/click", post(public::record_click))
+        .route("/search/telemetry", post(public::record_search_telemetry));
 
     // 6. Multi-Tenant SaaS Portal (private no-store)
     let saas_routes = Router::new()
         .route("/dashboard", get(saas::get_dashboard))
         .route("/leads", get(saas::list_leads))
         .route("/leads/{id}/status", patch(saas::update_lead_status))
+        .route("/listings/{id}/reconfirm", post(saas::reconfirm_listing))
         .route("/opportunities", post(saas::create_opportunity))
         .route("/plan", patch(saas::simulate_plan_upgrade))
         .layer(axum::middleware::from_fn(no_cache_headers));
@@ -86,6 +91,7 @@ pub fn api_router(state: Arc<AppState>) -> Router<Arc<AppState>> {
         .route("/reports", get(admin::list_reports))
         .route("/reports/{id}", patch(admin::action_report))
         .route("/audit-logs", get(admin::list_audit_logs))
+        .route("/metrics", get(admin::get_pmf_metrics))
         .layer(axum::middleware::from_fn(no_cache_headers));
 
     Router::new()

@@ -9,7 +9,7 @@ import { MapPin, ShieldCheck, LayoutDashboard, Compass, Search, Map, User, Plus,
 
 export function Navigation() {
   const pathname = usePathname();
-  const { town, setTown } = useTown();
+  const { town, setTown, lang, toggleLang } = useTown();
   const { toggle } = useSpotlight();
   const { user } = useAuth();
 
@@ -110,6 +110,27 @@ export function Navigation() {
             <Plus className="h-3 w-3" strokeWidth={2.5} />
             <span className="hidden sm:inline">Submit</span>
           </Link>
+
+          {/* Bilingual Switcher EN | తెలుగు */}
+          <button
+            onClick={toggleLang}
+            className="flex items-center gap-1 rounded px-2 sm:px-2.5 py-1.5 border pressable font-mono text-[11px] font-semibold transition-all"
+            style={{
+              borderColor: lang === "te" ? "var(--accent-signal)" : "var(--border-grid)",
+              backgroundColor: lang === "te" ? "rgba(255, 79, 23, 0.08)" : "var(--bg-muted)",
+              color: "var(--ink-primary)",
+            }}
+            title="Switch between English and Telugu"
+            aria-label="Toggle language English or Telugu"
+          >
+            <span className={lang === "en" ? "font-bold text-[var(--accent-signal)]" : "text-[var(--ink-secondary)]"}>
+              EN
+            </span>
+            <span className="text-[var(--border-grid)]">/</span>
+            <span className={lang === "te" ? "font-bold text-[var(--accent-signal)]" : "text-[var(--ink-secondary)]"}>
+              తెలుగు
+            </span>
+          </button>
 
           {/* Town selector */}
           <div

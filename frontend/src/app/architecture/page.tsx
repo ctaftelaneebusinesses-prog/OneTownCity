@@ -616,6 +616,78 @@ export default function ArchitecturePage() {
           </div>
         </section>
 
+        {/* Section 5: 30-Day Town Pilot Rollout Roadmap */}
+        <section style={{ marginBottom: 64 }}>
+          <h2
+            style={{
+              fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)',
+              fontSize: '11px',
+              letterSpacing: '0.06em',
+              textTransform: 'uppercase',
+              color: '#8B877F',
+              marginBottom: 24,
+              fontWeight: 400,
+            }}
+          >
+            05 — 30-Day Town Pilot Rollout Roadmap &amp; Operational Playbook
+          </h2>
+
+          <div
+            style={{
+              backgroundColor: '#111110',
+              border: '1px solid #D8D3C8',
+              padding: '36px 32px',
+              overflowX: 'auto',
+            }}
+          >
+            <svg
+              viewBox="0 0 900 240"
+              xmlns="http://www.w3.org/2000/svg"
+              style={{ width: '100%', maxWidth: 900, display: 'block', margin: '0 auto' }}
+              aria-label="30-Day Pilot Rollout Roadmap diagram"
+            >
+              {/* Timeline Horizontal Line */}
+              <line x1="40" y1="120" x2="860" y2="120" stroke="#D8D3C8" strokeWidth="2" strokeDasharray="4,4" />
+
+              {/* Stage 1: Days 1-7 */}
+              <circle cx="100" cy="120" r="16" fill="#FF4F17" />
+              <text x="100" y="125" textAnchor="middle" fill="#FFFFFF" fontSize="11" fontFamily="'JetBrains Mono', monospace" fontWeight="700">01</text>
+              <rect x="20" y="20" width="160" height="75" rx="4" fill="rgba(255,255,255,0.05)" stroke="rgba(255,79,23,0.4)" strokeWidth="1" />
+              <text x="100" y="42" textAnchor="middle" fill="#FF4F17" fontSize="11" fontFamily="'JetBrains Mono', monospace" fontWeight="700">DAYS 1 — 7</text>
+              <text x="100" y="58" textAnchor="middle" fill="#F4F2EE" fontSize="10" fontFamily="'Plus Jakarta Sans', sans-serif" fontWeight="700">Civic Foundation</text>
+              <text x="100" y="74" textAnchor="middle" fill="rgba(244,242,238,0.5)" fontSize="8" fontFamily="'JetBrains Mono', monospace">Seed Nellore/Kuppam</text>
+              <text x="100" y="86" textAnchor="middle" fill="rgba(244,242,238,0.5)" fontSize="8" fontFamily="'JetBrains Mono', monospace">Public Service Desk</text>
+
+              {/* Stage 2: Days 8-15 */}
+              <circle cx="330" cy="120" r="16" fill="#111110" stroke="#FF4F17" strokeWidth="2" />
+              <text x="330" y="125" textAnchor="middle" fill="#F4F2EE" fontSize="11" fontFamily="'JetBrains Mono', monospace" fontWeight="700">02</text>
+              <rect x="250" y="145" width="160" height="75" rx="4" fill="rgba(255,255,255,0.05)" stroke="rgba(216,211,200,0.3)" strokeWidth="1" />
+              <text x="330" y="167" textAnchor="middle" fill="#D97706" fontSize="11" fontFamily="'JetBrains Mono', monospace" fontWeight="700">DAYS 8 — 15</text>
+              <text x="330" y="183" textAnchor="middle" fill="#F4F2EE" fontSize="10" fontFamily="'Plus Jakarta Sans', sans-serif" fontWeight="700">Merchant Onboarding</text>
+              <text x="330" y="199" textAnchor="middle" fill="rgba(244,242,238,0.5)" fontSize="8" fontFamily="'JetBrains Mono', monospace">Owner Profile Claims</text>
+              <text x="330" y="211" textAnchor="middle" fill="rgba(244,242,238,0.5)" fontSize="8" fontFamily="'JetBrains Mono', monospace">WhatsApp Consents</text>
+
+              {/* Stage 3: Days 16-23 */}
+              <circle cx="560" cy="120" r="16" fill="#111110" stroke="#0D6847" strokeWidth="2" />
+              <text x="560" y="125" textAnchor="middle" fill="#F4F2EE" fontSize="11" fontFamily="'JetBrains Mono', monospace" fontWeight="700">03</text>
+              <rect x="480" y="20" width="160" height="75" rx="4" fill="rgba(255,255,255,0.05)" stroke="rgba(13,104,71,0.4)" strokeWidth="1" />
+              <text x="560" y="42" textAnchor="middle" fill="#0D6847" fontSize="11" fontFamily="'JetBrains Mono', monospace" fontWeight="700">DAYS 16 — 23</text>
+              <text x="560" y="58" textAnchor="middle" fill="#F4F2EE" fontSize="10" fontFamily="'Plus Jakarta Sans', sans-serif" fontWeight="700">Campus Activation</text>
+              <text x="560" y="74" textAnchor="middle" fill="rgba(244,242,238,0.5)" fontSize="8" fontFamily="'JetBrains Mono', monospace">Zero-Fee Internships</text>
+              <text x="560" y="86" textAnchor="middle" fill="rgba(244,242,238,0.5)" fontSize="8" fontFamily="'JetBrains Mono', monospace">Verified Student Pass</text>
+
+              {/* Stage 4: Days 24-30 */}
+              <circle cx="790" cy="120" r="16" fill="#0D6847" />
+              <text x="790" y="125" textAnchor="middle" fill="#FFFFFF" fontSize="11" fontFamily="'JetBrains Mono', monospace" fontWeight="700">04</text>
+              <rect x="710" y="145" width="160" height="75" rx="4" fill="rgba(13,104,71,0.15)" stroke="#0D6847" strokeWidth="1" />
+              <text x="790" y="167" textAnchor="middle" fill="#0D6847" fontSize="11" fontFamily="'JetBrains Mono', monospace" fontWeight="700">DAYS 24 — 30</text>
+              <text x="790" y="183" textAnchor="middle" fill="#F4F2EE" fontSize="10" fontFamily="'Plus Jakarta Sans', sans-serif" fontWeight="700">PMF Quality Audit</text>
+              <text x="790" y="199" textAnchor="middle" fill="rgba(244,242,238,0.7)" fontSize="8" fontFamily="'JetBrains Mono', monospace">10 Metric SLA Review</text>
+              <text x="790" y="211" textAnchor="middle" fill="rgba(244,242,238,0.7)" fontSize="8" fontFamily="'JetBrains Mono', monospace">Cluster Rollout Gate</text>
+            </svg>
+          </div>
+        </section>
+
         {/* Footer */}
         <footer
           style={{

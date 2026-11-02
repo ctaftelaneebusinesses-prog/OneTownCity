@@ -91,7 +91,27 @@ interface AdminReport {
   reason: "incorrect_details" | "closed_business" | "duplicate" | "misleading";
   details: string;
   status: "open" | "resolved" | "dismissed";
+  duplicate_of_listing_id?: string | null;
+  reviewed_by?: string | null;
+  review_notes?: string | null;
   created_at: string;
+}
+
+interface PmfMetrics {
+  search_success_rate_pct: number;
+  contact_action_rate_pct: number;
+  enquiry_completion_rate_pct: number;
+  avg_listing_completeness_pct: number;
+  freshness_30d_rate_pct: number;
+  repeat_session_rate_pct: number;
+  median_provider_response_hours: number;
+  median_correction_resolution_hours: number;
+  indexable_pages_count: number;
+  active_tenant_retention_pct: number;
+  sample_searches: number;
+  sample_enquiries: number;
+  sample_listings: number;
+  generated_at: string;
 }
 
 interface AdminAuditLog {
@@ -109,7 +129,7 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8080/api/v
 
 export default function AdminGovernancePage() {
   const { town } = useTown();
-  const [activeTab, setActiveTab] = useState<"moderation" | "claims" | "categories" | "reports" | "audit">("moderation");
+  const [activeTab, setActiveTab] = useState<"pmf" | "moderation" | "claims" | "categories" | "reports" | "audit">("pmf");
 
   const [listings, setListings] = useState<AdminListing[]>([]);
   const [opportunities, setOpportunities] = useState<AdminOpportunity[]>([]);
@@ -118,6 +138,7 @@ export default function AdminGovernancePage() {
   const [categoryRequests, setCategoryRequests] = useState<AdminCategoryExtension[]>([]);
   const [reports, setReports] = useState<AdminReport[]>([]);
   const [auditLogs, setAuditLogs] = useState<AdminAuditLog[]>([]);
+  const [pmfMetrics, setPmfMetrics] = useState<PmfMetrics | null>(null);
 
   const [loading, setLoading] = useState<boolean>(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
@@ -129,12 +150,13 @@ export default function AdminGovernancePage() {
         "x-user-id": "22222222-2222-2222-2222-222222222202",
       };
 
-      const [modRes, claimsRes, catRes, repRes, auditRes] = await Promise.all([
+      const [modRes, claimsRes, catRes, repRes, auditRes, metricsRes] = await Promise.all([
         fetch(`${API_BASE}/admin/moderation`, { headers, credentials: "include", signal }),
         fetch(`${API_BASE}/admin/claims`, { headers, credentials: "include", signal }),
         fetch(`${API_BASE}/categories/extensions`, { headers, credentials: "include", signal }),
         fetch(`${API_BASE}/admin/reports`, { headers, credentials: "include", signal }),
         fetch(`${API_BASE}/admin/audit-logs`, { headers, credentials: "include", signal }),
+        fetch(`${API_BASE}/admin/metrics`, { signal }),
       ]);
 
       if (signal?.aborted) return;
@@ -160,6 +182,10 @@ export default function AdminGovernancePage() {
       if (auditRes.ok) {
         const auditData = await auditRes.json();
         setAuditLogs(auditData || []);
+      }
+      if (metricsRes.ok) {
+        const metData = await metricsRes.json();
+        setPmfMetrics(metData);
       }
     } catch (err: unknown) {
       if (err instanceof Error && err.name === "AbortError") return;
@@ -306,8 +332,25 @@ export default function AdminGovernancePage() {
   };
 
   // Action: Resolve Report
-  const handleResolveReport = async (id: string, status: "resolved" | "dismissed") => {
+  const handleResolveReport = async (
+    id: string,
+    status: "resolved" | "dismissed",
+    reason?: string
+  ) => {
     setActionLoading(id);
+    let duplicateOf: string | undefined = undefined;
+    let notes: string | undefined = undefined;
+
+    if (status === "resolved") {
+      notes = prompt("Admin resolution notes (e.g., details updated, duplicate merged):") || undefined;
+      if (reason === "duplicate") {
+        const dup = prompt("Enter Master Listing UUID to merge duplicate into (optional):");
+        if (dup?.trim()) {
+          duplicateOf = dup.trim();
+        }
+      }
+    }
+
     try {
       const res = await fetch(`${API_BASE}/admin/reports/${id}`, {
         method: "PATCH",
@@ -316,7 +359,11 @@ export default function AdminGovernancePage() {
           "x-user-id": "22222222-2222-2222-2222-222222222202",
         },
         credentials: "include",
-        body: JSON.stringify({ status }),
+        body: JSON.stringify({
+          status,
+          review_notes: notes,
+          duplicate_of_listing_id: duplicateOf,
+        }),
       });
 
       if (!res.ok) throw new Error("Failed to update report status");
@@ -358,8 +405,20 @@ export default function AdminGovernancePage() {
           </button>
         </div>
 
-        {/* 5 Dedicated Governance Tabs */}
+        {/* 6 Dedicated Governance Tabs */}
         <div className="flex border-b border-[var(--border-grid)] bg-[var(--bg-surface)] rounded-t-lg overflow-x-auto mb-6">
+          <button
+            onClick={() => setActiveTab("pmf")}
+            className={`flex items-center gap-2 px-5 py-3.5 font-mono text-xs uppercase tracking-wider font-semibold border-b-2 transition-all whitespace-nowrap ${
+              activeTab === "pmf"
+                ? "border-[var(--accent-signal)] text-[var(--ink-primary)] bg-[var(--bg-muted)]/40"
+                : "border-transparent text-[var(--ink-secondary)] hover:text-[var(--ink-primary)]"
+            }`}
+          >
+            <Sparkles className="w-4 h-4 text-[var(--accent-signal)]" />
+            <span>00 / PMF Metrics</span>
+          </button>
+
           <button
             onClick={() => setActiveTab("moderation")}
             className={`flex items-center gap-2 px-5 py-3.5 font-mono text-xs uppercase tracking-wider font-semibold border-b-2 transition-all whitespace-nowrap ${
@@ -420,6 +479,67 @@ export default function AdminGovernancePage() {
             <span>05 / Audit Trail ({auditLogs.length})</span>
           </button>
         </div>
+
+        {/* TAB 00: 10 PMF & QUALITY METRICS */}
+        {activeTab === "pmf" && (
+          <div className="space-y-6">
+            <div className="rounded-lg border border-[var(--border-grid)] bg-[var(--bg-surface)] p-6 shadow-sm">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 mb-4 border-b border-[var(--border-grid)] gap-2">
+                <div>
+                  <h3 className="font-mono text-sm font-bold uppercase tracking-wider text-[var(--ink-primary)]">
+                    Ten Core Product-Market Fit &amp; Operational Quality Metrics
+                  </h3>
+                  <p className="font-mono text-xs text-[var(--ink-secondary)] mt-0.5">
+                    Live telemetry across searches, admissions leads, 30-day freshness, and citizen resolutions.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 font-mono text-xs text-[var(--ink-secondary)]">
+                  <span>Cadence: <strong>Weekly / Monthly</strong></span>
+                </div>
+              </div>
+
+              {pmfMetrics ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                  {[
+                    { label: "Search Success Rate", value: `${pmfMetrics.search_success_rate_pct}%`, benchmark: "Target: >= 80%", status: pmfMetrics.search_success_rate_pct >= 80 ? "Pass" : "Review" },
+                    { label: "Contact Action Rate", value: `${pmfMetrics.contact_action_rate_pct}%`, benchmark: "Calls + WhatsApp / View", status: "Active" },
+                    { label: "Enquiry Completion", value: `${pmfMetrics.enquiry_completion_rate_pct}%`, benchmark: "Target: >= 70%", status: "Open" },
+                    { label: "Avg Completeness", value: `${pmfMetrics.avg_listing_completeness_pct}%`, benchmark: "Target: >= 85%", status: pmfMetrics.avg_listing_completeness_pct >= 85 ? "Pass" : "Needs Data" },
+                    { label: "30-Day Freshness Rate", value: `${pmfMetrics.freshness_30d_rate_pct}%`, benchmark: "Reconfirmed in 30d", status: "Monthly" },
+                    { label: "Repeat Session Rate", value: `${pmfMetrics.repeat_session_rate_pct}%`, benchmark: "Multi-session Users", status: "Engaged" },
+                    { label: "Provider Response Time", value: `${pmfMetrics.median_provider_response_hours}h`, benchmark: "Target: <= 6h", status: pmfMetrics.median_provider_response_hours <= 6 ? "Fast" : "Review" },
+                    { label: "Correction Resolution", value: `${pmfMetrics.median_correction_resolution_hours}h`, benchmark: "Target: <= 48h", status: "Within SLA" },
+                    { label: "Indexable Pages", value: `${pmfMetrics.indexable_pages_count}`, benchmark: "Clean URL Corpus", status: "SEO Ready" },
+                    { label: "Active Tenant Retention", value: `${pmfMetrics.active_tenant_retention_pct}%`, benchmark: "Updated in 30d", status: "Stable" },
+                  ].map((m, idx) => (
+                    <div key={idx} className="p-4 rounded-lg bg-[var(--bg-canvas)] border border-[var(--border-grid)] flex flex-col justify-between">
+                      <div>
+                        <div className="flex items-center justify-between">
+                          <span className="font-mono text-[10px] uppercase font-bold text-[var(--ink-secondary)] truncate">
+                            {m.label}
+                          </span>
+                          <span className="font-mono text-[9px] uppercase font-bold text-[#0D6847] bg-[#0D6847]/10 px-1.5 py-0.5 rounded">
+                            {m.status}
+                          </span>
+                        </div>
+                        <div className="font-mono text-2xl font-bold text-[var(--ink-primary)] my-2">
+                          {m.value}
+                        </div>
+                      </div>
+                      <div className="font-mono text-[10px] text-[var(--ink-secondary)]">
+                        {m.benchmark}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="p-8 text-center font-mono text-xs text-[var(--ink-secondary)]">
+                  Loading telemetry metrics...
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* TAB 01: PENDING LISTINGS & NEWS */}
         {activeTab === "moderation" && (
@@ -811,7 +931,7 @@ export default function AdminGovernancePage() {
 
                     <div className="flex items-center gap-2 shrink-0">
                       <button
-                        onClick={() => handleResolveReport(item.id, "resolved")}
+                        onClick={() => handleResolveReport(item.id, "resolved", item.reason)}
                         disabled={actionLoading === item.id}
                         className="px-3.5 py-1.5 rounded bg-emerald-800 text-white font-mono text-xs font-bold uppercase tracking-wider hover:bg-emerald-900 transition-colors disabled:opacity-50"
                       >

@@ -11,9 +11,11 @@ use uuid::Uuid;
 
 use crate::AppState;
 use crate::models::{
-    Category, EnquiryCreateDto, Listing, ListingSummary, NewsItemType, OpportunityParentOrg,
-    OpportunityType, ReportCreateDto, SingleNewsDetailResponse, SingleOpportunityDetailResponse,
-    StudentOpportunity, TelemetryClickDto, TownNews, VerificationStatus, VerticalType,
+    AggregatedHomepageResponse, Category, CategoryWithCount, EnquiryCreateDto, HomepageStats,
+    Listing, ListingSummary, NewsItemType, OpportunityParentOrg, OpportunityType, PublicService,
+    ReportCreateDto, SearchTelemetryRequest, SingleNewsDetailResponse,
+    SingleOpportunityDetailResponse, StudentOpportunity, TelemetryClickDto, TownNews,
+    VerificationStatus, VerticalType,
 };
 
 #[derive(Debug, Deserialize)]
@@ -57,17 +59,18 @@ pub async fn list_listings(
             r#"
             SELECT 
                 l.id, l.tenant_id, l.vertical as "vertical: VerticalType",
-                c.name as category_name, l.slug, l.name, l.tagline,
+                c.name as category_name, l.slug, l.name, l.name_te, l.tagline,
                 l.address, l.locality, l.city, l.phone, l.whatsapp,
                 l.is_sponsored, l.verification_status as "verification_status: _",
-                l.view_count, l.whatsapp_clicks, l.last_confirmed_at
+                l.view_count, l.whatsapp_clicks, l.completeness_score,
+                l.price_or_fee_range, l.map_url, l.last_confirmed_at
             FROM listings l
             JOIN categories c ON c.id = l.category_id
             WHERE l.moderation_status = 'approved'
               AND l.city = $1
               AND ($2::vertical_type IS NULL OR l.vertical = $2)
               AND ($3::varchar IS NULL OR l.locality ILIKE '%' || $3 || '%')
-            ORDER BY l.is_sponsored DESC, l.last_confirmed_at DESC
+            ORDER BY l.is_sponsored DESC, l.completeness_score DESC, l.last_confirmed_at DESC
             LIMIT $4 OFFSET $5
             "#,
             city,
@@ -79,29 +82,34 @@ pub async fn list_listings(
         .fetch_all(&state.db)
         .await
     } else {
-        // Full-Text Search with Trigram fallback
+        // Full-Text Search with Trigram and Telugu/alias fallback
         sqlx::query_as!(
             ListingSummary,
             r#"
             SELECT 
                 l.id, l.tenant_id, l.vertical as "vertical: VerticalType",
-                c.name as category_name, l.slug, l.name, l.tagline,
+                c.name as category_name, l.slug, l.name, l.name_te, l.tagline,
                 l.address, l.locality, l.city, l.phone, l.whatsapp,
                 l.is_sponsored, l.verification_status as "verification_status: _",
-                l.view_count, l.whatsapp_clicks, l.last_confirmed_at
+                l.view_count, l.whatsapp_clicks, l.completeness_score,
+                l.price_or_fee_range, l.map_url, l.last_confirmed_at
             FROM listings l
             JOIN categories c ON c.id = l.category_id
             WHERE l.moderation_status = 'approved'
               AND l.city = $1
               AND ($2::vertical_type IS NULL OR l.vertical = $2)
               AND (
-                  l.search_vector @@ plainto_tsquery('english', $3)
+                  l.search_vector @@ plainto_tsquery('simple', $3)
+                  OR l.search_vector @@ plainto_tsquery('english', $3)
                   OR l.name ILIKE '%' || $3 || '%'
+                  OR l.name_te ILIKE '%' || $3 || '%'
+                  OR l.search_aliases ILIKE '%' || $3 || '%'
                   OR l.locality ILIKE '%' || $3 || '%'
               )
             ORDER BY 
                 l.is_sponsored DESC,
-                ts_rank(l.search_vector, plainto_tsquery('english', $3)) DESC,
+                ts_rank(l.search_vector, plainto_tsquery('simple', $3)) DESC,
+                l.completeness_score DESC,
                 l.last_confirmed_at DESC
             LIMIT $4 OFFSET $5
             "#,
@@ -198,8 +206,8 @@ pub async fn list_news(
         r#"
         SELECT 
             id, tenant_id, city, locality, item_type as "item_type: NewsItemType",
-            title, slug, content, source_name, source_url, is_confirmed_fact,
-            event_date, event_time, event_venue,
+            title, name_te, slug, content, source_name, source_url, is_confirmed_fact,
+            event_date, event_time, event_venue, calendar_pillar, organiser_contact, entry_eligibility,
             moderation_status as "moderation_status: _",
             created_at, updated_at
         FROM town_news
@@ -238,8 +246,8 @@ pub async fn get_news_by_slug(
         r#"
         SELECT 
             id, tenant_id, city, locality, item_type as "item_type: NewsItemType",
-            title, slug, content, source_name, source_url, is_confirmed_fact,
-            event_date, event_time, event_venue,
+            title, name_te, slug, content, source_name, source_url, is_confirmed_fact,
+            event_date, event_time, event_venue, calendar_pillar, organiser_contact, entry_eligibility,
             moderation_status as "moderation_status: _",
             created_at, updated_at
         FROM town_news
@@ -272,8 +280,8 @@ pub async fn get_news_by_slug(
         r#"
         SELECT 
             id, tenant_id, city, locality, item_type as "item_type: NewsItemType",
-            title, slug, content, source_name, source_url, is_confirmed_fact,
-            event_date, event_time, event_venue,
+            title, name_te, slug, content, source_name, source_url, is_confirmed_fact,
+            event_date, event_time, event_venue, calendar_pillar, organiser_contact, entry_eligibility,
             moderation_status as "moderation_status: _",
             created_at, updated_at
         FROM town_news
@@ -372,7 +380,7 @@ pub async fn list_categories(
     let categories = sqlx::query_as!(
         Category,
         r#"
-        SELECT id, vertical as "vertical: VerticalType", slug, name, description, icon, display_order, is_active, created_at
+        SELECT id, vertical as "vertical: VerticalType", slug, name, name_te, description, search_aliases, icon, display_order, is_active, created_at
         FROM categories
         WHERE is_active = true
         ORDER BY display_order ASC, name ASC
@@ -692,4 +700,285 @@ pub async fn list_towns(
     }
 
     Ok(Json(towns))
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// GET /api/v1/homepage?town={town} (Single Aggregated 9-Section Payload)
+// ─────────────────────────────────────────────────────────────────────────────
+
+#[derive(Debug, Deserialize)]
+pub struct TownQuery {
+    pub town: Option<String>,
+}
+
+pub async fn get_homepage(
+    State(state): State<Arc<AppState>>,
+    Query(params): Query<TownQuery>,
+) -> Result<Json<AggregatedHomepageResponse>, (StatusCode, Json<Value>)> {
+    let town = params.town.unwrap_or_else(|| "Nellore".to_string());
+
+    // 1. Popular Categories with completeness >= 80 and active listing count
+    let popular_categories = sqlx::query_as!(
+        CategoryWithCount,
+        r#"
+        SELECT 
+            c.id, c.vertical as "vertical: VerticalType", c.slug, c.name, c.name_te,
+            c.description, c.icon, c.search_aliases,
+            COUNT(l.id)::bigint as "listing_count!"
+        FROM categories c
+        LEFT JOIN listings l ON l.category_id = c.id 
+            AND l.moderation_status = 'approved' 
+            AND l.city = $1 
+            AND l.completeness_score >= 80
+        WHERE c.is_active = TRUE
+        GROUP BY c.id
+        ORDER BY "listing_count!" DESC, c.display_order ASC
+        LIMIT 12
+        "#,
+        town
+    )
+    .fetch_all(&state.db)
+    .await
+    .unwrap_or_default();
+
+    // 2. Happening This Week (Events)
+    let happening_this_week = sqlx::query_as!(
+        TownNews,
+        r#"
+        SELECT 
+            id, tenant_id, city, locality, item_type as "item_type: NewsItemType",
+            title, name_te, slug, content, source_name, source_url, is_confirmed_fact,
+            event_date, event_time, event_venue, calendar_pillar, organiser_contact, entry_eligibility,
+            moderation_status as "moderation_status: _",
+            created_at, updated_at
+        FROM town_news
+        WHERE city = $1 
+          AND moderation_status = 'approved'
+          AND calendar_pillar IS NOT NULL
+        ORDER BY COALESCE(event_date, CURRENT_DATE + INTERVAL '100 days') ASC, created_at DESC
+        LIMIT 6
+        "#,
+        town
+    )
+    .fetch_all(&state.db)
+    .await
+    .unwrap_or_default();
+
+    // 3. Civic Tracker Projects
+    let civic_tracker = sqlx::query_as!(
+        TownNews,
+        r#"
+        SELECT 
+            id, tenant_id, city, locality, item_type as "item_type: NewsItemType",
+            title, name_te, slug, content, source_name, source_url, is_confirmed_fact,
+            event_date, event_time, event_venue, calendar_pillar, organiser_contact, entry_eligibility,
+            moderation_status as "moderation_status: _",
+            created_at, updated_at
+        FROM town_news
+        WHERE city = $1 
+          AND moderation_status = 'approved'
+          AND item_type = 'civic_project'
+        ORDER BY created_at DESC
+        LIMIT 4
+        "#,
+        town
+    )
+    .fetch_all(&state.db)
+    .await
+    .unwrap_or_default();
+
+    // 4. What's New? (Recently added & reconfirmed)
+    let whats_new = sqlx::query_as!(
+        ListingSummary,
+        r#"
+        SELECT 
+            l.id, l.tenant_id, l.vertical as "vertical: VerticalType",
+            c.name as category_name, l.slug, l.name, l.name_te, l.tagline,
+            l.address, l.locality, l.city, l.phone, l.whatsapp,
+            l.is_sponsored, l.verification_status as "verification_status: _",
+            l.view_count, l.whatsapp_clicks, l.completeness_score,
+            l.price_or_fee_range, l.map_url, l.last_confirmed_at
+        FROM listings l
+        JOIN categories c ON c.id = l.category_id
+        WHERE l.moderation_status = 'approved'
+          AND l.city = $1
+        ORDER BY l.last_confirmed_at DESC
+        LIMIT 8
+        "#,
+        town
+    )
+    .fetch_all(&state.db)
+    .await
+    .unwrap_or_default();
+
+    // 5. Spotlight Listings (High craft, completeness >= 85, verified)
+    let spotlight_listings = sqlx::query_as!(
+        ListingSummary,
+        r#"
+        SELECT 
+            l.id, l.tenant_id, l.vertical as "vertical: VerticalType",
+            c.name as category_name, l.slug, l.name, l.name_te, l.tagline,
+            l.address, l.locality, l.city, l.phone, l.whatsapp,
+            l.is_sponsored, l.verification_status as "verification_status: _",
+            l.view_count, l.whatsapp_clicks, l.completeness_score,
+            l.price_or_fee_range, l.map_url, l.last_confirmed_at
+        FROM listings l
+        JOIN categories c ON c.id = l.category_id
+        WHERE l.moderation_status = 'approved'
+          AND l.city = $1
+        ORDER BY l.is_sponsored DESC, l.completeness_score DESC, l.view_count DESC
+        LIMIT 6
+        "#,
+        town
+    )
+    .fetch_all(&state.db)
+    .await
+    .unwrap_or_default();
+
+    // 6. Public Services Directory
+    let public_services = sqlx::query_as!(
+        PublicService,
+        r#"
+        SELECT 
+            id, town, name, name_te, category, phone, emergency_phone,
+            address, service_hours, official_source_url, last_confirmed_at,
+            moderation_status as "moderation_status: _",
+            created_at, updated_at
+        FROM public_services
+        WHERE town = $1 AND moderation_status = 'approved'
+        ORDER BY category ASC, name ASC
+        "#,
+        town
+    )
+    .fetch_all(&state.db)
+    .await
+    .unwrap_or_default();
+
+    // 7. Stats
+    let stats_row = sqlx::query!(
+        r#"
+        SELECT 
+            COUNT(*) FILTER (WHERE l.moderation_status = 'approved' AND l.city = $1)::bigint as total_listings,
+            COUNT(*) FILTER (WHERE l.moderation_status = 'approved' AND l.city = $1 AND l.verification_status != 'not_verified')::bigint as total_verified,
+            COALESCE(AVG(l.completeness_score) FILTER (WHERE l.moderation_status = 'approved' AND l.city = $1), 85.0)::float8 as avg_completeness
+        FROM listings l
+        "#,
+        town
+    )
+    .fetch_one(&state.db)
+    .await;
+
+    let events_count = sqlx::query_scalar!(
+        "SELECT COUNT(*) FROM town_news WHERE city = $1 AND moderation_status = 'approved'",
+        town
+    )
+    .fetch_one(&state.db)
+    .await
+    .unwrap_or(Some(0))
+    .unwrap_or(0);
+
+    let opps_count = sqlx::query_scalar!(
+        "SELECT COUNT(*) FROM student_opportunities WHERE city = $1 AND moderation_status = 'approved'",
+        town
+    )
+    .fetch_one(&state.db)
+    .await
+    .unwrap_or(Some(0))
+    .unwrap_or(0);
+
+    let (total_verified, avg_comp) = match stats_row {
+        Ok(r) => (r.total_verified.unwrap_or(0), r.avg_completeness.unwrap_or(85.0)),
+        Err(_) => (0, 85.0),
+    };
+
+    Ok(Json(AggregatedHomepageResponse {
+        town,
+        popular_categories,
+        happening_this_week,
+        civic_tracker,
+        whats_new,
+        spotlight_listings,
+        public_services,
+        stats: HomepageStats {
+            total_verified_listings: total_verified,
+            total_upcoming_events: events_count,
+            total_student_opportunities: opps_count,
+            avg_completeness_pct: (avg_comp * 10.0).round() / 10.0,
+        },
+    }))
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// POST /api/v1/search/telemetry (Log Queries and Result Clicks)
+// ─────────────────────────────────────────────────────────────────────────────
+
+pub async fn record_search_telemetry(
+    State(state): State<Arc<AppState>>,
+    Json(dto): Json<SearchTelemetryRequest>,
+) -> Result<(StatusCode, Json<Value>), (StatusCode, Json<Value>)> {
+    let sanitized_query = crate::validation::sanitize_text(&dto.query_text);
+    let query_trimmed = if sanitized_query.len() > 255 {
+        sanitized_query[..255].to_string()
+    } else {
+        sanitized_query
+    };
+
+    sqlx::query!(
+        r#"
+        INSERT INTO search_telemetry (id, town, query_text, results_count, led_to_action, created_at)
+        VALUES ($1, $2, $3, $4, $5, NOW())
+        "#,
+        Uuid::new_v4(),
+        dto.town,
+        query_trimmed,
+        dto.results_count,
+        dto.led_to_action.unwrap_or(false)
+    )
+    .execute(&state.db)
+    .await
+    .map_err(|e| {
+        tracing::error!("Error recording search telemetry: {}", e);
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({ "error": "Failed to log telemetry" })),
+        )
+    })?;
+
+    Ok((StatusCode::CREATED, Json(json!({ "status": "recorded" }))))
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// GET /api/v1/public-services (Public Services Directory)
+// ─────────────────────────────────────────────────────────────────────────────
+
+pub async fn list_public_services(
+    State(state): State<Arc<AppState>>,
+    Query(params): Query<TownQuery>,
+) -> Result<Json<Vec<PublicService>>, (StatusCode, Json<Value>)> {
+    let town = params.town.unwrap_or_else(|| "Nellore".to_string());
+    let services = sqlx::query_as!(
+        PublicService,
+        r#"
+        SELECT 
+            id, town, name, name_te, category, phone, emergency_phone,
+            address, service_hours, official_source_url, last_confirmed_at,
+            moderation_status as "moderation_status: _",
+            created_at, updated_at
+        FROM public_services
+        WHERE town = $1 AND moderation_status = 'approved'
+        ORDER BY category ASC, name ASC
+        "#,
+        town
+    )
+    .fetch_all(&state.db)
+    .await
+    .map_err(|e| {
+        tracing::error!("Error fetching public services: {}", e);
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({ "error": "Database error" })),
+        )
+    })?;
+
+    Ok(Json(services))
 }

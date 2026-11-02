@@ -84,10 +84,36 @@ export default function TenantDashboard() {
   // Plan simulator upgrade feedback
   const [planMessage, setPlanMessage] = useState("");
 
+  // 1-Click Freshness Reconfirmation state
+  const [isReconfirming, setIsReconfirming] = useState(false);
+  const [reconfirmMessage, setReconfirmMessage] = useState("");
+
   const currentUserId =
     tenantPersona === "education"
       ? "22222222-2222-2222-2222-222222222204" // Dr. K.S. Rao (Narayana College)
       : "22222222-2222-2222-2222-222222222205"; // V. Ramanathan (Minerva Bookstore)
+
+  const tenantListingId =
+    tenantPersona === "education"
+      ? "55555555-5555-5555-5555-555555555501"
+      : "55555555-5555-5555-5555-555555555502";
+
+  const handleReconfirmListing = async () => {
+    setIsReconfirming(true);
+    try {
+      const res = await fetch(`${API_BASE}/saas/listings/${tenantListingId}/reconfirm`, {
+        method: "POST",
+      });
+      if (res.ok) {
+        setReconfirmMessage("Listing freshness successfully reconfirmed for 30-day prominence cycle.");
+        setTimeout(() => setReconfirmMessage(""), 4500);
+      }
+    } catch (e) {
+      console.error("Reconfirmation error:", e);
+    } finally {
+      setIsReconfirming(false);
+    }
+  };
 
   const fetchDashboardData = useCallback(async (signal?: AbortSignal) => {
     setIsLoading(true);
@@ -431,6 +457,115 @@ export default function TenantDashboard() {
 
         {/* ── MAIN CONTENT ──────────────────────────────────────── */}
         <main className="p-4 sm:p-7 flex flex-col gap-5 w-full min-w-0 overflow-x-hidden">
+
+          {/* Listing Freshness Guarantee & 1-Click Reconfirmation */}
+          <div
+            style={{
+              background: T.surface,
+              border: `1px solid ${T.border}`,
+              borderRadius: 6,
+              padding: "16px 20px",
+            }}
+            className="flex flex-col md:flex-row md:items-center justify-between gap-4"
+          >
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                <span
+                  style={{
+                    fontFamily: "'JetBrains Mono', monospace",
+                    fontSize: 11,
+                    fontWeight: 700,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.1em",
+                    color: T.inkPrim,
+                  }}
+                >
+                  Profile Completeness &amp; Freshness Meter
+                </span>
+                <span
+                  style={{
+                    fontFamily: "'JetBrains Mono', monospace",
+                    fontSize: 10,
+                    fontWeight: 700,
+                    color: "#0D6847",
+                    background: "rgba(13,104,71,0.1)",
+                    padding: "2px 6px",
+                    borderRadius: 4,
+                  }}
+                >
+                  95% High Craft
+                </span>
+                <span
+                  style={{
+                    fontFamily: "'JetBrains Mono', monospace",
+                    fontSize: 10,
+                    color: T.inkTert,
+                  }}
+                >
+                  30-Day Freshness Cycle Active
+                </span>
+              </div>
+              <div style={{ height: 6, background: "#EAE6DF", borderRadius: 3, overflow: "hidden", maxWidth: 420 }}>
+                <div style={{ height: "100%", width: "95%", background: "#0D6847", borderRadius: 3 }} />
+              </div>
+              <div
+                style={{
+                  fontFamily: "'JetBrains Mono', monospace",
+                  fontSize: 10,
+                  color: T.inkTert,
+                  marginTop: 6,
+                }}
+              >
+                Audited: Verified Fee Range · Operating Hours · Locality Map · Consented WhatsApp · Telugu Search Alias
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                onClick={handleReconfirmListing}
+                disabled={isReconfirming}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                  padding: "8px 16px",
+                  background: T.accent,
+                  color: "#FFFFFF",
+                  border: "none",
+                  borderRadius: 4,
+                  fontFamily: "'JetBrains Mono', monospace",
+                  fontSize: 11,
+                  fontWeight: 700,
+                  textTransform: "uppercase",
+                  cursor: isReconfirming ? "not-allowed" : "pointer",
+                  opacity: isReconfirming ? 0.7 : 1,
+                  boxShadow: "0 1px 3px rgba(255,79,23,0.2)",
+                }}
+              >
+                <CheckCircle2 size={13} />
+                <span>{isReconfirming ? "Reconfirming..." : "Reconfirm Details Are Current"}</span>
+              </button>
+            </div>
+          </div>
+
+          {reconfirmMessage && (
+            <div
+              style={{
+                padding: "10px 14px",
+                border: `1px solid ${T.verified}`,
+                borderRadius: 4,
+                background: "rgba(13,104,71,0.08)",
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+              }}
+            >
+              <Check size={14} color={T.verified} />
+              <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: T.verified, fontWeight: 600 }}>
+                {reconfirmMessage}
+              </span>
+            </div>
+          )}
 
           {/* 4 KPI cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 w-full">

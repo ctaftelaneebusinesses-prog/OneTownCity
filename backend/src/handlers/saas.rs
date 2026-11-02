@@ -361,3 +361,63 @@ pub async fn simulate_plan_upgrade(
         "message": format!("Successfully switched to {} with {} leads/month", target_plan.name, target_plan.monthly_lead_quota)
     })))
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// POST /api/v1/saas/listings/{id}/reconfirm (1-Click Owner Freshness Reconfirmation)
+// ─────────────────────────────────────────────────────────────────────────────
+
+pub async fn reconfirm_listing(
+    State(state): State<Arc<AppState>>,
+    Path(id): Path<Uuid>,
+) -> Result<Json<Value>, (StatusCode, Json<Value>)> {
+    let result = sqlx::query!(
+        r#"
+        UPDATE listings
+        SET last_confirmed_at = NOW(), updated_at = NOW()
+        WHERE id = $1
+        RETURNING id, name, last_confirmed_at
+        "#,
+        id
+    )
+    .fetch_optional(&state.db)
+    .await
+    .map_err(|e| {
+        tracing::error!("Error reconfirming listing: {}", e);
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({ "error": "Database error" })),
+        )
+    })?;
+
+    let row = match result {
+        Some(r) => r,
+        None => {
+            return Err((
+                StatusCode::NOT_FOUND,
+                Json(json!({ "error": "Listing not found" })),
+            ));
+        }
+    };
+
+    state.worker.enqueue(crate::worker::AuditJob {
+        entity_type: "listing".to_string(),
+        entity_id: row.id.to_string(),
+        action: "reconfirmed".to_string(),
+        actor_id: None,
+        actor_role: "tenant_owner".to_string(),
+        payload: json!({
+            "name": row.name,
+            "last_confirmed_at": row.last_confirmed_at,
+            "note": "Owner 1-click reconfirmed profile is accurate and current"
+        }),
+        simulate_dispatch: false,
+    });
+
+    Ok(Json(json!({
+        "status": "success",
+        "listing_id": row.id,
+        "name": row.name,
+        "last_confirmed_at": row.last_confirmed_at,
+        "message": "Listing details successfully reconfirmed as current"
+    })))
+}

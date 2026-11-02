@@ -209,6 +209,7 @@ pub struct ListingSummary {
     pub category_name: String,
     pub slug: String,
     pub name: String,
+    pub name_te: Option<String>,
     pub tagline: String,
     pub address: String,
     pub locality: String,
@@ -219,6 +220,9 @@ pub struct ListingSummary {
     pub verification_status: VerificationStatus,
     pub view_count: i32,
     pub whatsapp_clicks: i32,
+    pub completeness_score: i32,
+    pub price_or_fee_range: Option<String>,
+    pub map_url: Option<String>,
     pub last_confirmed_at: DateTime<Utc>,
 }
 
@@ -230,6 +234,7 @@ pub struct TownNews {
     pub locality: String,
     pub item_type: NewsItemType,
     pub title: String,
+    pub name_te: Option<String>,
     pub slug: String,
     pub content: String,
     pub source_name: String,
@@ -238,6 +243,9 @@ pub struct TownNews {
     pub event_date: Option<NaiveDate>,
     pub event_time: Option<String>,
     pub event_venue: Option<String>,
+    pub calendar_pillar: Option<String>,
+    pub organiser_contact: Option<String>,
+    pub entry_eligibility: Option<String>,
     pub moderation_status: ModerationStatus,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
@@ -524,12 +532,92 @@ pub struct Category {
     pub vertical: VerticalType,
     pub slug: String,
     pub name: String,
+    pub name_te: Option<String>,
     pub description: String,
+    pub search_aliases: Option<String>,
     pub icon: String,
     pub display_order: i32,
     pub is_active: bool,
     pub created_at: DateTime<Utc>,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
+pub struct CategoryWithCount {
+    pub id: Uuid,
+    pub vertical: VerticalType,
+    pub slug: String,
+    pub name: String,
+    pub name_te: Option<String>,
+    pub description: String,
+    pub icon: String,
+    pub search_aliases: Option<String>,
+    pub listing_count: i64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
+pub struct PublicService {
+    pub id: Uuid,
+    pub town: String,
+    pub name: String,
+    pub name_te: Option<String>,
+    pub category: String,
+    pub phone: String,
+    pub emergency_phone: Option<String>,
+    pub address: String,
+    pub service_hours: String,
+    pub official_source_url: String,
+    pub last_confirmed_at: DateTime<Utc>,
+    pub moderation_status: ModerationStatus,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct SearchTelemetryRequest {
+    pub town: String,
+    pub query_text: String,
+    pub results_count: i32,
+    pub led_to_action: Option<bool>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct HomepageStats {
+    pub total_verified_listings: i64,
+    pub total_upcoming_events: i64,
+    pub total_student_opportunities: i64,
+    pub avg_completeness_pct: f64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AggregatedHomepageResponse {
+    pub town: String,
+    pub popular_categories: Vec<CategoryWithCount>,
+    pub happening_this_week: Vec<TownNews>,
+    pub civic_tracker: Vec<TownNews>,
+    pub whats_new: Vec<ListingSummary>,
+    pub spotlight_listings: Vec<ListingSummary>,
+    pub public_services: Vec<PublicService>,
+    pub stats: HomepageStats,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PmfMetricsResponse {
+    pub search_success_rate_pct: f64,
+    pub contact_action_rate_pct: f64,
+    pub enquiry_completion_rate_pct: f64,
+    pub avg_listing_completeness_pct: f64,
+    pub freshness_30d_rate_pct: f64,
+    pub repeat_session_rate_pct: f64,
+    pub median_provider_response_hours: f64,
+    pub median_correction_resolution_hours: f64,
+    pub indexable_pages_count: i64,
+    pub active_tenant_retention_pct: f64,
+    pub sample_searches: i64,
+    pub sample_enquiries: i64,
+    pub sample_listings: i64,
+    pub generated_at: DateTime<Utc>,
+}
+
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SingleNewsDetailResponse {
