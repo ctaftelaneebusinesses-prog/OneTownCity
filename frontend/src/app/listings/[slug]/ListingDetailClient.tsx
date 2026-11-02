@@ -137,6 +137,16 @@ export function ListingDetailClient({ listing }: ListingDetailClientProps) {
                 OWNER CLAIMED
               </span>
             )}
+            {listing.verification_status === "not_verified" && (
+              <Link
+                href={`/claim/${listing.slug}`}
+                className="inline-flex items-center gap-1.5 rounded bg-amber-900/90 hover:bg-amber-800 border border-amber-500/50 px-3 py-1 font-mono text-[10px] font-bold text-amber-200 uppercase shadow-sm transition-colors"
+                title="Claim this institution or business profile"
+              >
+                <ShieldCheck className="h-3 w-3 text-amber-400" />
+                CLAIM PROFILE
+              </Link>
+            )}
             {listing.is_sponsored && (
               <span className="inline-flex items-center gap-1 rounded bg-[#D97706] px-2.5 py-1 font-mono text-[10px] font-bold text-white uppercase shadow-sm">
                 <Tag className="h-3 w-3" />
@@ -280,6 +290,26 @@ export function ListingDetailClient({ listing }: ListingDetailClientProps) {
                   <p>{listing.city}</p>
                 </div>
               </div>
+
+              {/* Claim Profile Callout */}
+              {listing.verification_status === "not_verified" && (
+                <div className="rounded-xl border border-amber-600/40 bg-amber-50/80 p-4 space-y-2.5">
+                  <div className="flex items-center gap-2 text-amber-900 font-mono text-xs font-bold uppercase">
+                    <ShieldCheck className="h-4 w-4 text-amber-700" />
+                    <span>Do you manage this entity?</span>
+                  </div>
+                  <p className="text-xs text-amber-950 font-sans leading-relaxed">
+                    Claim this profile to manage operating hours, publish student discount passes, and respond directly to admission or customer leads.
+                  </p>
+                  <Link
+                    href={`/claim/${listing.slug}`}
+                    className="w-full inline-flex items-center justify-center gap-1.5 rounded-lg bg-amber-800 hover:bg-amber-900 text-white font-mono text-xs font-bold uppercase py-2 transition-colors shadow-xs"
+                  >
+                    <span>Claim This Profile</span>
+                    <ArrowLeft className="h-3 w-3 rotate-180" />
+                  </Link>
+                </div>
+              )}
 
               {/* Primary Contact Buttons */}
               <div className="space-y-2.5 pt-2">

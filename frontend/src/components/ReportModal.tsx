@@ -10,10 +10,15 @@ type ReportModalProps = {
     id: string;
     name: string;
   } | null;
-  apiUrl: string;
+  apiUrl?: string;
 };
 
-export function ReportModal({ isOpen, onClose, listing, apiUrl }: ReportModalProps) {
+export function ReportModal({
+  isOpen,
+  onClose,
+  listing,
+  apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8080/api/v1",
+}: ReportModalProps) {
   const [reportedByEmail, setReportedByEmail] = useState("");
   const [reason, setReason] = useState<"incorrect_details" | "closed_business" | "duplicate" | "misleading">("incorrect_details");
   const [details, setDetails] = useState("");

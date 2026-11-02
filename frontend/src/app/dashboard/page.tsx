@@ -89,7 +89,7 @@ export default function TenantDashboard() {
       ? "22222222-2222-2222-2222-222222222204" // Dr. K.S. Rao (Narayana College)
       : "22222222-2222-2222-2222-222222222205"; // V. Ramanathan (Minerva Bookstore)
 
-  const fetchDashboardData = useCallback(async () => {
+  const fetchDashboardData = useCallback(async (signal?: AbortSignal) => {
     setIsLoading(true);
     try {
       const headers = {
@@ -98,21 +98,27 @@ export default function TenantDashboard() {
       };
 
       const [resMetrics, resLeads] = await Promise.all([
-        fetch(`${API_BASE}/saas/dashboard`, { headers }).then((r) => (r.ok ? r.json() : null)),
-        fetch(`${API_BASE}/saas/leads`, { headers }).then((r) => (r.ok ? r.json() : [])),
+        fetch(`${API_BASE}/saas/dashboard`, { headers, signal }).then((r) => (r.ok ? r.json() : null)),
+        fetch(`${API_BASE}/saas/leads`, { headers, signal }).then((r) => (r.ok ? r.json() : [])),
       ]);
 
+      if (signal?.aborted) return;
       setMetrics(resMetrics);
       setLeads(resLeads);
-    } catch (e) {
+    } catch (e: unknown) {
+      if (e instanceof Error && e.name === "AbortError") return;
       console.error("Failed to load tenant data:", e);
     } finally {
-      setIsLoading(false);
+      if (!signal?.aborted) {
+        setIsLoading(false);
+      }
     }
   }, [currentUserId, tenantPersona]);
 
   useEffect(() => {
-    fetchDashboardData();
+    const controller = new AbortController();
+    fetchDashboardData(controller.signal);
+    return () => controller.abort();
   }, [fetchDashboardData]);
 
   const toggleLeadStatus = async (leadId: string, currentStatus: string) => {

@@ -13,7 +13,8 @@ use uuid::Uuid;
 use crate::AppState;
 use crate::auth::AdminUserContext;
 use crate::models::{
-    ModerationStatus, OpportunityType, Report, ReportStatus, VerificationStatus, VerticalType,
+    ModerationStatus, NewsItemType, OpportunityType, Report, ReportStatus, VerificationStatus,
+    VerticalType,
 };
 
 #[derive(Debug, Clone, Serialize, FromRow)]
@@ -36,6 +37,20 @@ pub struct AdminOpportunitySummary {
     pub opportunity_type: OpportunityType,
     pub provider_name: String,
     pub city: String,
+    pub moderation_status: ModerationStatus,
+    pub created_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Clone, Serialize, FromRow)]
+pub struct AdminNewsSummary {
+    pub id: Uuid,
+    pub title: String,
+    pub slug: String,
+    pub item_type: NewsItemType,
+    pub city: String,
+    pub source_name: String,
+    pub source_url: String,
+    pub is_confirmed_fact: bool,
     pub moderation_status: ModerationStatus,
     pub created_at: DateTime<Utc>,
 }
@@ -107,9 +122,27 @@ pub async fn list_moderation_queue(
         )
     })?;
 
+    // 3. Pending or recently submitted town news
+    let news = sqlx::query_as!(
+        AdminNewsSummary,
+        r#"
+        SELECT id, title, slug, item_type as "item_type: NewsItemType",
+               city, source_name, source_url, is_confirmed_fact,
+               moderation_status as "moderation_status: ModerationStatus",
+               created_at
+        FROM town_news
+        ORDER BY created_at DESC
+        LIMIT 30
+        "#
+    )
+    .fetch_all(&state.db)
+    .await
+    .unwrap_or_default();
+
     Ok(Json(json!({
         "listings": listings,
         "opportunities": opportunities,
+        "news": news,
     })))
 }
 
@@ -123,7 +156,7 @@ pub async fn action_moderation_item(
     Path(id): Path<Uuid>,
     Json(dto): Json<ModerationActionDto>,
 ) -> Result<Json<Value>, (StatusCode, Json<Value>)> {
-    let update_result = match dto.entity_type.as_str() {
+    match dto.entity_type.as_str() {
         "listing" => {
             let verif = dto.verification.unwrap_or(VerificationStatus::DetailsReviewed);
             let reason = dto.rejection_reason.clone().unwrap_or_default();
@@ -143,6 +176,13 @@ pub async fn action_moderation_item(
             )
             .execute(&state.db)
             .await
+            .map_err(|e| {
+                tracing::error!("Listing moderation update failed: {}", e);
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(json!({ "error": "Failed to update listing" })),
+                )
+            })?;
         }
         "opportunity" => {
             sqlx::query!(
@@ -156,6 +196,13 @@ pub async fn action_moderation_item(
             )
             .execute(&state.db)
             .await
+            .map_err(|e| {
+                tracing::error!("Opportunity moderation update failed: {}", e);
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(json!({ "error": "Failed to update opportunity" })),
+                )
+            })?;
         }
         "news" => {
             sqlx::query!(
@@ -169,6 +216,13 @@ pub async fn action_moderation_item(
             )
             .execute(&state.db)
             .await
+            .map_err(|e| {
+                tracing::error!("News moderation update failed: {}", e);
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(json!({ "error": "Failed to update news" })),
+                )
+            })?;
         }
         _ => {
             return Err((
@@ -177,14 +231,6 @@ pub async fn action_moderation_item(
             ));
         }
     };
-
-    update_result.map_err(|e| {
-        tracing::error!("Moderation update failed: {}", e);
-        (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Json(json!({ "error": "Failed to update item" })),
-        )
-    })?;
 
     state.worker.enqueue(crate::worker::AuditJob {
         entity_type: dto.entity_type.clone(),

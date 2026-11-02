@@ -26,8 +26,10 @@ pub enum VerticalType {
 pub enum UserRole {
     SuperAdmin,
     CityAdmin,
+    SubAdmin,
     ContentProvider,
     TenantOwner,
+    TenantStaff,
     Student,
 }
 
@@ -393,4 +395,200 @@ pub struct AuditLog {
     pub actor_role: String,
     pub payload: Value,
     pub created_at: DateTime<Utc>,
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// AUTH, SESSION & GOVERNANCE CLAIMS DTOs
+// ─────────────────────────────────────────────────────────────────────────────
+
+#[derive(Debug, Deserialize)]
+pub struct RegisterDto {
+    pub email: String,
+    pub password: String,
+    pub name: String,
+    pub role: Option<UserRole>,
+    pub organization_name: Option<String>,
+    pub vertical: Option<VerticalType>,
+    pub city: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct LoginDto {
+    pub email: String,
+    pub password: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AuthUserDto {
+    pub id: Uuid,
+    pub email: String,
+    pub name: String,
+    pub role: UserRole,
+    pub is_active: bool,
+    pub created_at: DateTime<Utc>,
+    pub last_login_at: Option<DateTime<Utc>>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct UserTenantMembershipDto {
+    pub organization_id: Uuid,
+    pub organization_name: String,
+    pub vertical: VerticalType,
+    pub city: String,
+    pub role: OrgRole,
+    pub plan_tier: PlanTier,
+}
+
+#[derive(Debug, Serialize)]
+pub struct AuthResponseDto {
+    pub user: AuthUserDto,
+    pub token: String,
+    pub tenant: Option<UserTenantMembershipDto>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SessionItemDto {
+    pub id: Uuid,
+    pub user_agent: Option<String>,
+    pub ip_address: Option<String>,
+    pub expires_at: DateTime<Utc>,
+    pub created_at: DateTime<Utc>,
+    pub is_current: bool,
+}
+
+#[derive(Debug, Serialize)]
+pub struct UserProfileDto {
+    pub user: AuthUserDto,
+    pub permissions: Vec<String>,
+    pub organizations: Vec<UserTenantMembershipDto>,
+    pub sessions: Vec<SessionItemDto>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct ClaimCreateDto {
+    pub listing_id: Uuid,
+    pub organization_name: String,
+    pub official_email: String,
+    pub official_phone: String,
+    pub verification_evidence: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
+pub struct OwnershipClaimItem {
+    pub id: Uuid,
+    pub listing_id: Uuid,
+    pub claimant_user_id: Uuid,
+    pub organization_name: String,
+    pub official_email: String,
+    pub official_phone: String,
+    pub verification_evidence: String,
+    pub status: ModerationStatus,
+    pub reviewed_by: Option<Uuid>,
+    pub review_notes: Option<String>,
+    pub created_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct ClaimReviewDto {
+    pub status: ModerationStatus,
+    pub review_notes: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct CategoryExtensionRequestDto {
+    pub vertical: VerticalType,
+    pub proposed_name: String,
+    pub justification: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
+pub struct CategoryExtensionItem {
+    pub id: Uuid,
+    pub requested_by: Uuid,
+    pub vertical: VerticalType,
+    pub proposed_name: String,
+    pub justification: String,
+    pub status: ModerationStatus,
+    pub reviewed_by: Option<Uuid>,
+    pub review_notes: Option<String>,
+    pub created_at: DateTime<Utc>,
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PHASE C: DIRECTORY CATEGORIES & NEW WORKFLOW MODELS
+// ─────────────────────────────────────────────────────────────────────────────
+
+#[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
+pub struct Category {
+    pub id: Uuid,
+    pub vertical: VerticalType,
+    pub slug: String,
+    pub name: String,
+    pub description: String,
+    pub icon: String,
+    pub display_order: i32,
+    pub is_active: bool,
+    pub created_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SingleNewsDetailResponse {
+    pub news: TownNews,
+    pub related_news: Vec<TownNews>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
+pub struct OpportunityParentOrg {
+    pub id: Uuid,
+    pub name: String,
+    pub slug: String,
+    pub verification_status: VerificationStatus,
+    pub city: String,
+    pub address: String,
+    pub phone: String,
+    pub email: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SingleOpportunityDetailResponse {
+    pub opportunity: StudentOpportunity,
+    pub organization: Option<OpportunityParentOrg>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct ListingSubmissionDto {
+    pub name: String,
+    pub vertical: VerticalType,
+    pub city: String,
+    pub category_id: Option<Uuid>,
+    pub address: String,
+    pub phone: String,
+    pub whatsapp: Option<String>,
+    pub website: Option<String>,
+    pub email: Option<String>,
+    pub description: String,
+    pub submitted_by_email: Option<String>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct NewsSubmissionDto {
+    pub title: String,
+    pub city: String,
+    pub item_type: NewsItemType,
+    pub content: String,
+    pub source_name: String,
+    pub source_url: String,
+    pub is_confirmed_fact: Option<bool>,
+    pub event_date: Option<String>,
+    pub event_time: Option<String>,
+    pub event_venue: Option<String>,
+    pub submitted_by_email: Option<String>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct CategorySubmissionDto {
+    pub vertical: VerticalType,
+    pub proposed_name: String,
+    pub justification: String,
+    pub email: Option<String>,
 }

@@ -216,9 +216,36 @@ pub async fn create_opportunity(
     tenant: VerifiedTenantContext,
     Json(dto): Json<OpportunityCreateDto>,
 ) -> Result<(StatusCode, Json<Value>), (StatusCode, Json<Value>)> {
+    // Input validation & sanitization
+    let sanitized_title = crate::validation::sanitize_text(&dto.title);
+    if let Err(e) = crate::validation::validate_string_length(&sanitized_title, 3, 250, "Opportunity title") {
+        return Err((StatusCode::BAD_REQUEST, Json(json!({ "error": e.to_string() }))));
+    }
+
+    let sanitized_provider = crate::validation::sanitize_text(&dto.provider_name);
+    if let Err(e) = crate::validation::validate_string_length(&sanitized_provider, 2, 150, "Provider name") {
+        return Err((StatusCode::BAD_REQUEST, Json(json!({ "error": e.to_string() }))));
+    }
+
+    let sanitized_desc = crate::validation::sanitize_text(&dto.description);
+    if let Err(e) = crate::validation::validate_string_length(&sanitized_desc, 10, 3000, "Description") {
+        return Err((StatusCode::BAD_REQUEST, Json(json!({ "error": e.to_string() }))));
+    }
+
+    if let Some(ref url) = dto.apply_url
+        && let Err(e) = crate::validation::validate_url(url)
+    {
+        return Err((StatusCode::BAD_REQUEST, Json(json!({ "error": e.to_string() }))));
+    }
+
+    if let Some(ref phone) = dto.contact_phone
+        && let Err(e) = crate::validation::validate_phone(phone)
+    {
+        return Err((StatusCode::BAD_REQUEST, Json(json!({ "error": e.to_string() }))));
+    }
+
     let opp_id = Uuid::new_v4();
-    let base_slug = dto
-        .title
+    let base_slug = sanitized_title
         .to_lowercase()
         .chars()
         .map(|c| if c.is_alphanumeric() { c } else { '-' })
@@ -238,10 +265,10 @@ pub async fn create_opportunity(
         tenant.tenant_id,
         tenant.city,
         dto.opportunity_type as _,
-        dto.title,
+        sanitized_title,
         slug,
-        dto.provider_name,
-        dto.description,
+        sanitized_provider,
+        sanitized_desc,
         dto.eligibility.unwrap_or_default(),
         dto.deadline,
         dto.apply_url.unwrap_or_default(),

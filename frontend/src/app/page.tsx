@@ -37,6 +37,8 @@ import {
   Layers,
   ChevronRight,
   AlertCircle,
+  Plus,
+  Lock,
 } from "lucide-react";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8080/api/v1";
@@ -227,9 +229,14 @@ function VisualListingCard({
               </span>
             )}
             {item.verification_status === "not_verified" && (
-              <span className="bg-neutral-900/80 text-neutral-300 text-[9px] font-mono uppercase px-2 py-0.5 rounded-md">
-                UNVERIFIED
-              </span>
+              <Link
+                href={`/claim/${item.slug}`}
+                className="bg-neutral-900/90 hover:bg-neutral-800 text-amber-300 border border-amber-600/40 text-[9px] font-mono font-bold uppercase px-2 py-0.5 rounded-md flex items-center gap-1 transition-colors"
+                title="Claim this profile as owner or administrator"
+              >
+                <Lock className="h-2.5 w-2.5" />
+                CLAIM PROFILE
+              </Link>
             )}
           </div>
         </div>
@@ -328,6 +335,16 @@ function VisualListingCard({
               <span className="hidden sm:inline">Call</span>
             </a>
           )}
+          {item.verification_status === "not_verified" && (
+            <Link
+              href={`/claim/${item.slug}`}
+              className="border border-amber-600/40 bg-amber-50 hover:bg-amber-100 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-amber-900 flex items-center gap-1 transition-colors pressable font-mono uppercase text-[10px]"
+              title="Claim this institution or business"
+            >
+              <Lock className="h-3 w-3 text-amber-700" />
+              <span>Claim</span>
+            </Link>
+          )}
           <button
             onClick={() => onReport(item)}
             className="p-1.5 text-[#8B877F] hover:text-[#FF4F17] hover:bg-white rounded-lg transition-colors pressable"
@@ -346,6 +363,17 @@ function VisualListingCard({
         </button>
       </div>
     </div>
+  );
+}
+
+function isSafeUrl(url: string | null | undefined): boolean {
+  if (!url) return false;
+  const trimmed = url.trim().toLowerCase();
+  return (
+    trimmed.startsWith("http://") ||
+    trimmed.startsWith("https://") ||
+    trimmed.startsWith("tel:") ||
+    trimmed.startsWith("mailto:")
   );
 }
 
@@ -376,7 +404,7 @@ export default function DiscoveryHub() {
     }, 2400);
   }, []);
 
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async (signal?: AbortSignal) => {
     setIsLoading(true);
     try {
       let listingsUrl = `${API_BASE}/listings?city=${encodeURIComponent(town)}`;
@@ -388,32 +416,44 @@ export default function DiscoveryHub() {
       }
 
       const [resListings, resNews, resOpps] = await Promise.all([
-        fetch(listingsUrl).then((r) => (r.ok ? r.json() : [])),
+        fetch(listingsUrl, { signal }).then((r) => (r.ok ? r.json() : [])),
         activeTab === "all" || activeTab === "news"
-          ? fetch(`${API_BASE}/news?city=${encodeURIComponent(town)}`).then((r) => (r.ok ? r.json() : []))
-          : Promise.resolve([]),
-        activeTab === "all" || activeTab === "students"
-          ? fetch(`${API_BASE}/students/opportunities?city=${encodeURIComponent(town)}`).then((r) =>
+          ? fetch(`${API_BASE}/news?city=${encodeURIComponent(town)}`, { signal }).then((r) =>
               r.ok ? r.json() : []
             )
           : Promise.resolve([]),
+        activeTab === "all" || activeTab === "students"
+          ? fetch(`${API_BASE}/students/opportunities?city=${encodeURIComponent(town)}`, {
+              signal,
+            }).then((r) => (r.ok ? r.json() : []))
+          : Promise.resolve([]),
       ]);
 
+      if (signal?.aborted) return;
       setListings(resListings);
       setNewsItems(resNews);
       setStudentOpps(resOpps);
-    } catch (err) {
+    } catch (err: unknown) {
+      if (err instanceof Error && err.name === "AbortError") {
+        return;
+      }
       console.error("Failed to load discovery data:", err);
     } finally {
-      setIsLoading(false);
+      if (!signal?.aborted) {
+        setIsLoading(false);
+      }
     }
   }, [town, activeTab, searchQuery]);
 
   useEffect(() => {
+    const controller = new AbortController();
     const timer = setTimeout(() => {
-      fetchData();
+      fetchData(controller.signal);
     }, 180);
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
   }, [fetchData]);
 
   const recordClick = async (listingId: string, clickType: "whatsapp" | "call") => {
@@ -807,24 +847,52 @@ export default function DiscoveryHub() {
                   Loading verified entities in {town}...
                 </div>
               ) : filteredListings.length === 0 ? (
-                <div className="rounded-2xl border border-[#D8D3C8] bg-white p-12 text-center space-y-3">
-                  <p className="font-mono text-sm text-[#111110] font-bold uppercase">
-                    No matching verified entities found in {town}
-                  </p>
-                  <p className="font-mono text-xs text-[#575551]">
-                    Try clearing search filters or choosing a different locality.
-                  </p>
-                  <button
-                    onClick={() => {
-                      setSearchQuery("");
-                      setSelectedLocality("all");
-                      setFilterVerifiedOnly(false);
-                      setFilterOffersOnly(false);
-                    }}
-                    className="rounded-lg bg-[#111110] text-[#F4F2EE] font-mono text-xs px-4 py-2 uppercase hover:bg-[#242422] pressable"
-                  >
-                    Reset All Filters
-                  </button>
+                <div className="rounded-2xl border border-[#D8D3C8] bg-white p-12 text-center space-y-4 shadow-sm">
+                  <div className="w-12 h-12 rounded-full bg-[#FF4F17]/10 text-[#FF4F17] flex items-center justify-center mx-auto">
+                    <Search className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h3 className="font-mono text-base text-[#111110] font-bold uppercase">
+                      {searchQuery
+                        ? `No matching records in ${town} yet for "${searchQuery}"`
+                        : `No verified entities found in ${town}`}
+                    </h3>
+                    <p className="font-mono text-xs text-[#575551] mt-1.5 max-w-md mx-auto leading-relaxed">
+                      {searchQuery
+                        ? `Cannot find "${searchQuery}" in our civic index? Suggest this listing now to submit it for City Admin verification.`
+                        : "Try resetting your search query or choosing a different locality."}
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+                    {searchQuery ? (
+                      <Link
+                        href={`/submit?title=${encodeURIComponent(searchQuery)}`}
+                        className="rounded-lg bg-[#FF4F17] hover:bg-[#e03f0b] text-white font-mono text-xs font-bold px-5 py-2.5 uppercase tracking-wider transition-all inline-flex items-center gap-2 shadow-sm"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>Suggest This Listing ({searchQuery})</span>
+                      </Link>
+                    ) : (
+                      <Link
+                        href="/submit"
+                        className="rounded-lg bg-[#FF4F17] hover:bg-[#e03f0b] text-white font-mono text-xs font-bold px-5 py-2.5 uppercase tracking-wider transition-all inline-flex items-center gap-2 shadow-sm"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>Suggest a New Listing</span>
+                      </Link>
+                    )}
+                    <button
+                      onClick={() => {
+                        setSearchQuery("");
+                        setSelectedLocality("all");
+                        setFilterVerifiedOnly(false);
+                        setFilterOffersOnly(false);
+                      }}
+                      className="rounded-lg border border-[#D8D3C8] bg-white hover:bg-[#F4F2EE] text-[#111110] font-mono text-xs font-semibold px-4 py-2.5 uppercase transition-colors"
+                    >
+                      Reset All Filters
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
@@ -882,8 +950,8 @@ export default function DiscoveryHub() {
                           </span>
                         )}
                       </div>
-                      <h4 className="font-mono text-xs font-bold text-[#111110] line-clamp-2">
-                        {n.title}
+                      <h4 className="font-mono text-xs font-bold text-[#111110] line-clamp-2 hover:text-[#FF4F17] transition-colors">
+                        <Link href={`/news/${n.slug}`}>{n.title}</Link>
                       </h4>
                       <p className="font-sans text-[11px] text-[#575551] line-clamp-2 leading-relaxed">
                         {n.content}
@@ -958,8 +1026,8 @@ export default function DiscoveryHub() {
                           </span>
                         )}
                       </div>
-                      <h4 className="font-mono text-xs font-bold text-white line-clamp-1">
-                        {opp.title}
+                      <h4 className="font-mono text-xs font-bold text-white line-clamp-1 hover:text-[#FF4F17] transition-colors">
+                        <Link href={`/students/${opp.id}`}>{opp.title}</Link>
                       </h4>
                       <p className="font-sans text-[11px] text-white/70 line-clamp-1">
                         {opp.description}
@@ -1019,8 +1087,8 @@ export default function DiscoveryHub() {
                     )}
                   </div>
 
-                  <h3 className="font-mono text-sm font-bold text-[#111110] leading-snug">
-                    {n.title}
+                  <h3 className="font-mono text-sm font-bold text-[#111110] leading-snug hover:text-[#FF4F17] transition-colors">
+                    <Link href={`/news/${n.slug}`}>{n.title}</Link>
                   </h3>
                   <p className="font-sans text-xs text-[#575551] leading-relaxed">
                     {n.content}
@@ -1098,8 +1166,8 @@ export default function DiscoveryHub() {
                       )}
                     </div>
 
-                    <h3 className="font-mono text-base font-bold text-[#111110]">
-                      {opp.title}
+                    <h3 className="font-mono text-base font-bold text-[#111110] hover:text-[#FF4F17] transition-colors">
+                      <Link href={`/students/${opp.id}`}>{opp.title}</Link>
                     </h3>
                     <p className="font-sans text-xs text-[#575551] leading-relaxed max-w-[85ch]">
                       {opp.description}
@@ -1118,6 +1186,12 @@ export default function DiscoveryHub() {
                         {opp.provider_name}
                       </div>
                     </div>
+                    <Link
+                      href={`/students/${opp.id}`}
+                      className="border border-[#D8D3C8] hover:border-[#111110] bg-white text-[#111110] font-mono text-xs font-bold uppercase px-3 py-2.5 rounded-lg flex items-center gap-1.5 transition-colors pressable"
+                    >
+                      <span>Details</span>
+                    </Link>
                     {opp.apply_url && (
                       <a
                         href={opp.apply_url}

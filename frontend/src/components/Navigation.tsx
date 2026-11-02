@@ -4,18 +4,22 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTown } from "./TownContext";
 import { useSpotlight } from "./SpotlightProvider";
-import { MapPin, ShieldCheck, LayoutDashboard, Compass, Search, Map } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
+import { MapPin, ShieldCheck, LayoutDashboard, Compass, Search, Map, User, Plus, Tag, BookOpen, Lock } from "lucide-react";
 
 export function Navigation() {
   const pathname = usePathname();
   const { town, setTown } = useTown();
   const { toggle } = useSpotlight();
+  const { user } = useAuth();
 
   const navLinks = [
     { href: "/",             label: "Index",          icon: Compass,         exact: true },
+    { href: "/pricing",       label: "Pricing",        icon: Tag,             exact: false },
+    { href: "/trust",         label: "Trust",          icon: BookOpen,        exact: false },
     { href: "/dashboard",    label: "SaaS Studio",    icon: LayoutDashboard, exact: false },
+    { href: "/admin",        label: "Governance",     icon: Lock,            exact: false },
     { href: "/architecture", label: "System Map",     icon: Map,             exact: false },
-    { href: "/admin",        label: "Governance",     icon: ShieldCheck,     exact: false },
   ];
 
   const isActive = (href: string, exact: boolean) =>
@@ -88,8 +92,23 @@ export function Navigation() {
           })}
         </nav>
 
-        {/* Right: Town switcher + Spotlight trigger */}
+        {/* Right: Town switcher + Submit + Spotlight trigger */}
         <div className="flex items-center gap-2 shrink-0">
+          {/* Submit / Contribute CTA */}
+          <Link
+            href="/submit"
+            className="flex items-center gap-1.5 rounded px-2.5 py-1.5 border pressable font-mono text-[11px] font-semibold uppercase tracking-wider transition-all"
+            style={{
+              borderColor: "var(--accent-signal)",
+              backgroundColor: "rgba(255, 79, 23, 0.08)",
+              color: "var(--accent-signal)",
+              textDecoration: "none",
+            }}
+            title="Suggest listing, submit event, or request category"
+          >
+            <Plus className="h-3 w-3" strokeWidth={2.5} />
+            <span className="hidden sm:inline">Submit</span>
+          </Link>
 
           {/* Town selector */}
           <div
@@ -134,6 +153,42 @@ export function Navigation() {
               CTRL+K
             </span>
           </button>
+
+          {/* User Account / Sign In Trigger */}
+          {user ? (
+            <Link
+              href="/account"
+              className="flex items-center gap-1.5 rounded px-2.5 py-1.5 border pressable font-mono"
+              style={{
+                borderColor: "var(--accent-signal)",
+                backgroundColor: "var(--bg-muted)",
+                color: "var(--ink-primary)",
+                textDecoration: "none",
+              }}
+              title={`Signed in as ${user.name} (${user.role})`}
+            >
+              <div className="w-4 h-4 rounded-full bg-emerald-700 text-white flex items-center justify-center font-bold text-[9px] uppercase">
+                {user.name.charAt(0)}
+              </div>
+              <span className="hidden md:inline text-[11px] font-semibold truncate max-w-[90px]">
+                {user.name.split(" ")[0]}
+              </span>
+            </Link>
+          ) : (
+            <Link
+              href="/login"
+              className="flex items-center gap-1.5 rounded px-2.5 py-1.5 border pressable font-mono text-[11px] font-semibold uppercase tracking-wider"
+              style={{
+                borderColor: "var(--border-grid)",
+                backgroundColor: "var(--bg-muted)",
+                color: "var(--ink-primary)",
+                textDecoration: "none",
+              }}
+            >
+              <User className="h-3 w-3 shrink-0" strokeWidth={2} style={{ color: "var(--accent-signal)" }} />
+              <span className="hidden sm:inline">Sign In</span>
+            </Link>
+          )}
         </div>
       </div>
     </header>

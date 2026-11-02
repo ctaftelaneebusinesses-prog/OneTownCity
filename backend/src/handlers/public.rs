@@ -11,8 +11,9 @@ use uuid::Uuid;
 
 use crate::AppState;
 use crate::models::{
-    EnquiryCreateDto, Listing, ListingSummary, NewsItemType, OpportunityType, ReportCreateDto,
-    StudentOpportunity, TelemetryClickDto, TownNews, VerticalType,
+    Category, EnquiryCreateDto, Listing, ListingSummary, NewsItemType, OpportunityParentOrg,
+    OpportunityType, ReportCreateDto, SingleNewsDetailResponse, SingleOpportunityDetailResponse,
+    StudentOpportunity, TelemetryClickDto, TownNews, VerificationStatus, VerticalType,
 };
 
 #[derive(Debug, Deserialize)]
@@ -225,6 +226,172 @@ pub async fn list_news(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// GET /api/v1/news/{slug} (Single Town News / Event Dossier)
+// ─────────────────────────────────────────────────────────────────────────────
+
+pub async fn get_news_by_slug(
+    State(state): State<Arc<AppState>>,
+    Path(slug): Path<String>,
+) -> Result<Json<SingleNewsDetailResponse>, (StatusCode, Json<Value>)> {
+    let news = sqlx::query_as!(
+        TownNews,
+        r#"
+        SELECT 
+            id, tenant_id, city, locality, item_type as "item_type: NewsItemType",
+            title, slug, content, source_name, source_url, is_confirmed_fact,
+            event_date, event_time, event_venue,
+            moderation_status as "moderation_status: _",
+            created_at, updated_at
+        FROM town_news
+        WHERE slug = $1 AND moderation_status = 'approved'
+        "#,
+        slug
+    )
+    .fetch_optional(&state.db)
+    .await
+    .map_err(|e| {
+        tracing::error!("Error fetching news item by slug: {}", e);
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({ "error": "Database error" })),
+        )
+    })?;
+
+    let news = match news {
+        Some(n) => n,
+        None => {
+            return Err((
+                StatusCode::NOT_FOUND,
+                Json(json!({ "error": "News article or event not found" })),
+            ));
+        }
+    };
+
+    let related = sqlx::query_as!(
+        TownNews,
+        r#"
+        SELECT 
+            id, tenant_id, city, locality, item_type as "item_type: NewsItemType",
+            title, slug, content, source_name, source_url, is_confirmed_fact,
+            event_date, event_time, event_venue,
+            moderation_status as "moderation_status: _",
+            created_at, updated_at
+        FROM town_news
+        WHERE city = $1 AND id != $2 AND moderation_status = 'approved'
+        ORDER BY created_at DESC
+        LIMIT 4
+        "#,
+        news.city,
+        news.id
+    )
+    .fetch_all(&state.db)
+    .await
+    .unwrap_or_default();
+
+    Ok(Json(SingleNewsDetailResponse {
+        news,
+        related_news: related,
+    }))
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// GET /api/v1/students/opportunities/{id} (Single Opportunity Dossier)
+// ─────────────────────────────────────────────────────────────────────────────
+
+pub async fn get_opportunity_by_id(
+    State(state): State<Arc<AppState>>,
+    Path(id): Path<Uuid>,
+) -> Result<Json<SingleOpportunityDetailResponse>, (StatusCode, Json<Value>)> {
+    let opp = sqlx::query_as!(
+        StudentOpportunity,
+        r#"
+        SELECT 
+            id, tenant_id, city, opportunity_type as "opportunity_type: OpportunityType",
+            title, slug, provider_name, description, eligibility, deadline,
+            apply_url, contact_phone, discount_percent, stipend_amount,
+            moderation_status as "moderation_status: _",
+            anti_scam_acknowledged,
+            created_at, updated_at
+        FROM student_opportunities
+        WHERE id = $1 AND moderation_status = 'approved'
+        "#,
+        id
+    )
+    .fetch_optional(&state.db)
+    .await
+    .map_err(|e| {
+        tracing::error!("Error fetching opportunity by ID: {}", e);
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({ "error": "Database error" })),
+        )
+    })?;
+
+    let opp = match opp {
+        Some(o) => o,
+        None => {
+            return Err((
+                StatusCode::NOT_FOUND,
+                Json(json!({ "error": "Opportunity not found" })),
+            ));
+        }
+    };
+
+    let org_detail = if let Some(tenant_id) = opp.tenant_id {
+        sqlx::query_as!(
+            OpportunityParentOrg,
+            r#"
+            SELECT id, name, slug, verification_status as "verification_status: VerificationStatus",
+                   city, address, phone, email
+            FROM listings
+            WHERE tenant_id = $1
+            LIMIT 1
+            "#,
+            tenant_id
+        )
+        .fetch_optional(&state.db)
+        .await
+        .unwrap_or(None)
+    } else {
+        None
+    };
+
+    Ok(Json(SingleOpportunityDetailResponse {
+        opportunity: opp,
+        organization: org_detail,
+    }))
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// GET /api/v1/categories (Active Directory Categories)
+// ─────────────────────────────────────────────────────────────────────────────
+
+pub async fn list_categories(
+    State(state): State<Arc<AppState>>,
+) -> Result<Json<Vec<Category>>, (StatusCode, Json<Value>)> {
+    let categories = sqlx::query_as!(
+        Category,
+        r#"
+        SELECT id, vertical as "vertical: VerticalType", slug, name, description, icon, display_order, is_active, created_at
+        FROM categories
+        WHERE is_active = true
+        ORDER BY display_order ASC, name ASC
+        "#
+    )
+    .fetch_all(&state.db)
+    .await
+    .map_err(|e| {
+        tracing::error!("Error fetching categories: {}", e);
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({ "error": "Failed to fetch categories" })),
+        )
+    })?;
+
+    Ok(Json(categories))
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // GET /api/v1/students/opportunities (Internships, Scholarships, Hostels)
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -275,6 +442,35 @@ pub async fn create_enquiry(
     State(state): State<Arc<AppState>>,
     Json(dto): Json<EnquiryCreateDto>,
 ) -> Result<(StatusCode, Json<Value>), (StatusCode, Json<Value>)> {
+    // 0. Input validation & sanitization
+    let sanitized_name = crate::validation::sanitize_text(&dto.inquirer_name);
+    if let Err(e) = crate::validation::validate_string_length(&sanitized_name, 2, 100, "Inquirer name") {
+        return Err((StatusCode::BAD_REQUEST, Json(json!({ "error": e.to_string() }))));
+    }
+
+    if let Err(e) = crate::validation::validate_phone(&dto.inquirer_phone) {
+        return Err((StatusCode::BAD_REQUEST, Json(json!({ "error": e.to_string() }))));
+    }
+
+    let email = if let Some(ref em) = dto.inquirer_email {
+        let trimmed = em.trim();
+        if !trimmed.is_empty() {
+            if let Err(e) = crate::validation::validate_email(trimmed) {
+                return Err((StatusCode::BAD_REQUEST, Json(json!({ "error": e.to_string() }))));
+            }
+            trimmed.to_string()
+        } else {
+            String::new()
+        }
+    } else {
+        String::new()
+    };
+
+    let sanitized_message = crate::validation::sanitize_text(&dto.message);
+    if let Err(e) = crate::validation::validate_string_length(&sanitized_message, 5, 2000, "Enquiry message") {
+        return Err((StatusCode::BAD_REQUEST, Json(json!({ "error": e.to_string() }))));
+    }
+
     // 1. Resolve listing and its owning tenant
     let listing = sqlx::query!(
         "SELECT id, tenant_id, name FROM listings WHERE id = $1 AND moderation_status = 'approved'",
@@ -296,7 +492,6 @@ pub async fn create_enquiry(
         )
     })?;
 
-    let email = dto.inquirer_email.unwrap_or_default();
     let enquiry_id = Uuid::new_v4();
 
     // 2. Insert actionable enquiry
@@ -308,11 +503,11 @@ pub async fn create_enquiry(
         enquiry_id,
         listing.tenant_id,
         listing.id,
-        dto.inquirer_name,
+        sanitized_name,
         dto.inquirer_phone,
         email,
         dto.enquiry_type as _,
-        dto.message
+        sanitized_message
     )
     .execute(&state.db)
     .await
@@ -418,9 +613,25 @@ pub async fn create_report(
     State(state): State<Arc<AppState>>,
     Json(dto): Json<ReportCreateDto>,
 ) -> Result<(StatusCode, Json<Value>), (StatusCode, Json<Value>)> {
-    let email = dto
-        .reported_by_email
-        .unwrap_or_else(|| "anonymous@onetowncity.local".to_string());
+    let sanitized_details = crate::validation::sanitize_text(&dto.details);
+    if let Err(e) = crate::validation::validate_string_length(&sanitized_details, 5, 1000, "Report details") {
+        return Err((StatusCode::BAD_REQUEST, Json(json!({ "error": e.to_string() }))));
+    }
+
+    let email = if let Some(ref em) = dto.reported_by_email {
+        let trimmed = em.trim();
+        if !trimmed.is_empty() {
+            if let Err(e) = crate::validation::validate_email(trimmed) {
+                return Err((StatusCode::BAD_REQUEST, Json(json!({ "error": e.to_string() }))));
+            }
+            trimmed.to_string()
+        } else {
+            "anonymous@onetowncity.local".to_string()
+        }
+    } else {
+        "anonymous@onetowncity.local".to_string()
+    };
+
     let report_id = Uuid::new_v4();
 
     sqlx::query!(
@@ -432,7 +643,7 @@ pub async fn create_report(
         dto.listing_id,
         email,
         dto.reason as _,
-        dto.details
+        sanitized_details
     )
     .execute(&state.db)
     .await

@@ -40,5 +40,10 @@ oldfiles/
 
 # ── Test Artifacts ──────────────────────────────────────────
 /public/
+.playwright-mcp/
 
 .python_packages/
+
+# ── Graphify Knowledge Graph ─────────────────────────────────
+graphify-out/
+
